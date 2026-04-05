@@ -102,44 +102,31 @@ Quick reference metrics showing:
 
 ## Technical Architecture
 
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│                         SYSTEM ARCHITECTURE                          │
-├─────────────────────────────────────────────────────────────────────┤
-│                                                                      │
-│  ┌──────────────────────────────────────────────────────────────┐   │
-│  │                      FLASK BACKEND                            │   │
-│  │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐        │   │
-│  │  │  app.py     │  │data_utils.py│  │ai_service.py│        │   │
-│  │  │  (Routes)   │  │  (Data)     │  │  (AI API)   │        │   │
-│  │  └─────────────┘  └─────────────┘  └─────────────┘        │   │
-│  └──────────────────────────────────────────────────────────────┘   │
-│                              │                                       │
-│                              ▼                                       │
-│  ┌──────────────────────────────────────────────────────────────┐   │
-│  │                      OWID DATA                                │   │
-│  │              data/cache/owid_emissions.csv                    │   │
-│  └──────────────────────────────────────────────────────────────┘   │
-│                              │                                       │
-│                              ▼                                       │
-│  ┌──────────────────────────────────────────────────────────────┐   │
-│  │                    JINJA2 TEMPLATES                            │   │
-│  │  ┌─────────────────┐  ┌─────────────────────────────────┐   │   │
-│  │  │    base.html    │  │         index.html               │   │   │
-│  │  │  (CSS, Layout)  │  │  (Charts, JS, Components)       │   │   │
-│  │  └─────────────────┘  └─────────────────────────────────┘   │   │
-│  └──────────────────────────────────────────────────────────────┘   │
-│                              │                                       │
-│                              ▼                                       │
-│  ┌──────────────────────────────────────────────────────────────┐   │
-│  │                    PLOTLY.JS FRONTEND                         │   │
-│  │  ┌─────────┐  ┌─────────┐  ┌─────────┐  ┌─────────┐       │   │
-│  │  │  Line   │  │  Donut  │  │   Bar   │  │ Scatter │       │   │
-│  │  │  Chart  │  │  Chart  │  │  Chart  │  │  Chart  │       │   │
-│  │  └─────────┘  └─────────┘  └─────────┘  └─────────┘       │   │
-│  └──────────────────────────────────────────────────────────────┘   │
-│                                                                      │
-└─────────────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TD
+    subgraph Backend [Flask Backend]
+        A[app.py<br>Routes]
+        B[data_utils.py<br>Data Logic]
+        C[ai_service.py<br>OpenRouter API]
+    end
+
+    D[(OWID Data<br>owid_emissions.csv)]
+
+    subgraph Templates [Jinja2 Templates]
+        E[base.html<br>Layout & CSS]
+        F[index.html<br>Dashboard UI]
+    end
+
+    subgraph Frontend [Plotly Frontend]
+        G(Line Charts)
+        H(Donut Chart)
+        I(Bar Charts)
+        J(Scatter Plot)
+    end
+
+    Backend --> D
+    Backend --> Templates
+    Templates --> Frontend
 ```
 
 ### Tech Stack
