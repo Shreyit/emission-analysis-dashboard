@@ -1,0 +1,2982 @@
+{% extends "base.html" %}
+{% block title %}CO₂ Emission Analysis — Dashboard{% endblock %}
+
+{% block extra_css %}
+<style>
+    @keyframes countUp {
+        from {
+            opacity: 0;
+            transform: translate3d(0, 8px, 0);
+        }
+
+        to {
+            opacity: 1;
+            transform: translate3d(0, 0, 0);
+        }
+    }
+
+    .kpi-value {
+        animation: countUp 0.6s ease both;
+    }
+
+    .kpi-card:nth-child(1) .kpi-value {
+        animation-delay: 0.1s;
+    }
+
+    .kpi-card:nth-child(2) .kpi-value {
+        animation-delay: 0.18s;
+    }
+
+    .kpi-card:nth-child(3) .kpi-value {
+        animation-delay: 0.26s;
+    }
+
+    .kpi-card:nth-child(4) .kpi-value {
+        animation-delay: 0.34s;
+    }
+
+    /* ── INTRO HERO ── */
+    .intro-hero {
+        display: grid;
+        grid-template-columns: 1fr 320px;
+        gap: 1rem;
+        margin-bottom: 1rem;
+        align-items: start;
+    }
+
+    .country-card {
+        background: #fff;
+        border: 1px solid #e5e0d8;
+        border-radius: 16px;
+        padding: 1.5rem;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    }
+
+    .country-flag-row {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        margin-bottom: 1rem;
+    }
+
+    .country-flag {
+        width: 42px;
+        height: 30px;
+        border-radius: 6px;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        flex-shrink: 0;
+        box-shadow: var(--shadow-sm);
+    }
+
+    .country-name-big {
+        font-family: 'Outfit', sans-serif;
+        font-size: clamp(1.1rem, 2vw, 1.3rem);
+        font-weight: 700;
+        color: var(--text);
+    }
+
+    .country-iso {
+        font-family: 'DM Mono', monospace;
+        font-size: 0.7rem;
+        color: var(--text3);
+        letter-spacing: 0.1em;
+    }
+
+    /* ── QUICK STAT ROW ── */
+    .quick-stats {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.6rem;
+        margin-top: 1rem;
+    }
+
+    .qs {
+        background: #fff;
+        border: 1px solid #e5e0d8;
+        border-radius: 12px;
+        padding: 0.75rem;
+        transition: all 0.2s ease;
+    }
+
+    .qs:hover {
+        background: #fafafa;
+        transform: translateY(-2px);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    }
+
+    .qs-label {
+        font-size: 0.68rem;
+        color: var(--text3);
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        margin-bottom: 0.25rem;
+    }
+
+    .qs-val {
+        font-family: 'Outfit', sans-serif;
+        font-size: clamp(0.9rem, 1.5vw, 1.1rem);
+        font-weight: 700;
+        color: var(--text);
+    }
+
+    /* ── EGYPT HERO ── */
+    .egypt-hero {
+        margin: calc(-1 * var(--header-h)) calc(-1 * clamp(1.2rem, 2.8vw, 2.5rem)) 2rem calc(-1 * clamp(1.2rem, 2.8vw, 2.5rem));
+        width: calc(100% + 2 * clamp(1.2rem, 2.8vw, 2.5rem));
+        height: 380px;
+        position: relative;
+        overflow: hidden;
+        z-index: 0;
+        transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        cursor: pointer;
+    }
+
+    body.sidebar-collapsed .egypt-hero {
+        margin-left: -2rem;
+    }
+
+    .hero-img {
+        position: absolute;
+        inset: 0;
+        left: -3px;
+        right: -3px;
+        background-image: url('/static/egypt_hero.jpg');
+        background-size: cover;
+        background-position: center 40%;
+        transform-origin: center center;
+        transform: scale(1);
+        transition: transform 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        backface-visibility: hidden;
+        -webkit-backface-visibility: hidden;
+    }
+
+    .egypt-hero:hover .hero-img {
+        transform: scale(1.05);
+        transition: transform 1.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    }
+
+    .egypt-hero::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(to bottom,
+                transparent 0%,
+                transparent 70%,
+                rgba(250, 248, 245, 0.3) 85%,
+                rgba(250, 248, 245, 0.7) 95%,
+                rgba(250, 248, 245, 1) 100%);
+        pointer-events: none;
+        z-index: 1;
+    }
+
+    .hero-text {
+        position: absolute;
+        top: 25%;
+        left: 0;
+        right: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        pointer-events: none;
+        isolation: isolate;
+        z-index: 5;
+    }
+
+    .hero-glow {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: radial-gradient(ellipse 80% 50% at 50% 45%, rgba(198, 93, 59, 0.12) 0%, transparent 70%);
+        opacity: 0;
+        pointer-events: none;
+        z-index: 2;
+        transition: opacity 0.5s ease;
+    }
+
+    .egypt-hero:hover .hero-glow {
+        opacity: 1;
+    }
+
+    .hero-title {
+        font-family: 'Playfair Display', serif;
+        font-size: clamp(72px, 12vw, 140px);
+        font-weight: 800;
+        letter-spacing: 0.15em;
+        line-height: 1;
+        text-align: center;
+        color: white;
+        mix-blend-mode: overlay;
+        opacity: 0.95;
+        text-shadow:
+            0 0 20px rgba(255, 255, 255, 0.4),
+            0 4px 8px rgba(0, 0, 0, 0.4);
+        pointer-events: auto;
+        cursor: pointer;
+        transition: letter-spacing 0.4s ease, mix-blend-mode 0.4s ease;
+    }
+
+    .hero-title:hover {
+        mix-blend-mode: difference;
+        letter-spacing: 0.25em;
+        text-shadow:
+            0 0 40px rgba(255, 255, 255, 0.5),
+            0 0 80px rgba(255, 255, 255, 0.2),
+            0 4px 8px rgba(0, 0, 0, 0.4);
+    }
+
+    .hero-sub {
+        font-size: 13px;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        font-weight: 500;
+        color: rgba(255, 255, 255, 1);
+        text-shadow: 0 2px 12px rgba(0, 0, 0, 0.8), 0 4px 32px rgba(0, 0, 0, 0.6);
+        margin-top: 0.75rem;
+        text-align: center;
+        background: rgba(0, 0, 0, 0.25);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        padding: 0.4rem 1.2rem;
+        border-radius: 100px;
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        transition: background 0.4s ease, border-color 0.4s ease;
+    }
+
+    .egypt-hero:hover .hero-sub {
+        background: rgba(198, 93, 59, 0.35);
+        border-color: rgba(255, 255, 255, 0.3);
+    }
+
+    /* ── GAUGE / RING ── */
+    .gauge-card {
+        background: #fff;
+        border: 1px solid #e5e0d8;
+        border-radius: 16px;
+        padding: 1rem;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    }
+
+    .gauge-wrap {
+        position: relative;
+        width: 120px;
+        height: 120px;
+        margin-bottom: 0.75rem;
+    }
+
+    .gauge-svg {
+        width: 120px;
+        height: 120px;
+        transform: rotate(-90deg);
+    }
+
+    .gauge-bg {
+        fill: none;
+        stroke: var(--bg3);
+        stroke-width: 10;
+    }
+
+    .gauge-fill {
+        fill: none;
+        stroke: var(--primary);
+        stroke-width: 10;
+        stroke-linecap: round;
+        stroke-dasharray: 339.3;
+        stroke-dashoffset: 339.3;
+        transition: stroke-dashoffset 1.2s cubic-bezier(0.4, 0, 0.2, 1) 0.5s;
+    }
+
+    .gauge-center {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+    }
+
+    /* Gauge and context panel hover effects */
+    .gauge-wrap-sm {
+        width: 160px;
+        height: 160px;
+        margin: 0 auto;
+        position: relative;
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        cursor: pointer;
+    }
+
+    .gauge-wrap-sm {
+        transform: translate3d(0, 0, 0);
+    }
+
+    .gauge-wrap-sm:hover {
+        transform: scale(1.08);
+    }
+
+    .gauge-wrap-sm .gauge-svg {
+        width: 160px;
+        height: 160px;
+    }
+
+    .gauge-wrap-sm .gauge-center {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate3d(-50%, -50%, 0);
+        text-align: center;
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .gauge-wrap-sm:hover .gauge-center {
+        transform: translate3d(-50%, -50%, 0) scale(1.05);
+    }
+
+    .gauge-wrap-sm .gauge-val {
+        font-size: clamp(1rem, 1.8vw, 1.25rem);
+        font-weight: 700;
+        transition: color 0.3s ease;
+    }
+
+    .gauge-wrap-sm:hover .gauge-val {
+        color: var(--primary);
+    }
+
+    .gauge-wrap-sm .gauge-unit {
+        font-size: 0.7rem;
+        color: var(--text3);
+        transition: color 0.3s ease;
+    }
+
+    .gauge-wrap-sm:hover .gauge-unit {
+        color: var(--primary);
+    }
+
+    /* Context panel */
+    .context-panel {
+        background: #fff;
+        border: 1px solid #e5e0d8;
+        border-radius: 16px;
+        padding: 1.5rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.85rem;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        transition: all 0.2s ease;
+    }
+
+    .context-panel:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+        border-color: var(--primary);
+    }
+
+    .context-header {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        transition: opacity 0.3s ease;
+    }
+
+    .context-panel:hover .context-header {
+        opacity: 0.9;
+    }
+
+    .context-title {
+        font-family: 'Syne', sans-serif;
+        font-size: clamp(0.8rem, 1.2vw, 0.9rem);
+        font-weight: 600;
+        color: var(--text);
+        transition: color 0.3s ease;
+    }
+
+    .context-panel:hover .context-title {
+        color: var(--primary);
+    }
+
+    .context-sub {
+        font-size: 0.72rem;
+        color: var(--text3);
+        font-family: 'DM Mono', monospace;
+    }
+
+    .context-bars {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+
+    .ctx-row {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        padding: 0.15rem 0;
+        border-radius: 6px;
+        transition: background 0.3s ease;
+        cursor: default;
+    }
+
+    .ctx-row:hover {
+        background: rgba(0, 0, 0, 0.04);
+    }
+
+    .ctx-row-highlight {
+        background: rgba(200, 148, 58, 0.06);
+        transition: background 0.3s ease;
+    }
+
+    .ctx-row-highlight:hover {
+        background: rgba(200, 148, 58, 0.12);
+    }
+
+    .ctx-row-highlight .ctx-name {
+        font-weight: 600;
+        color: var(--text);
+    }
+
+    .ctx-flag-name {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        width: 90px;
+        flex-shrink: 0;
+    }
+
+    .ctx-name {
+        font-size: 0.78rem;
+        color: var(--text2);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        transition: color 0.3s ease;
+    }
+
+    .ctx-row:hover .ctx-name {
+        color: var(--text);
+    }
+
+    .ctx-bar-track {
+        flex: 1;
+        height: 10px;
+        background: rgba(0, 0, 0, 0.06);
+        border-radius: 4px;
+        overflow: hidden;
+    }
+
+    .ctx-bar-fill {
+        height: 100%;
+        border-radius: 4px;
+        width: 0;
+        transition: width 1.2s cubic-bezier(0.4, 0, 0.2, 1) 0.6s, filter 0.3s ease;
+    }
+
+    .ctx-row:hover .ctx-bar-fill {
+        filter: brightness(1.1);
+    }
+
+    .ctx-val {
+        font-family: 'DM Mono', monospace;
+        font-size: 0.75rem;
+        color: var(--text2);
+        width: 32px;
+        text-align: right;
+        flex-shrink: 0;
+        transition: color 0.3s ease;
+    }
+
+    .context-bars {
+        display: flex;
+        flex-direction: column;
+        gap: 0.3rem;
+    }
+
+    .ctx-row:hover .ctx-val {
+        color: var(--text);
+    }
+
+    .context-insight {
+        font-size: 0.8rem;
+        color: var(--text2);
+        line-height: 1.4;
+        padding: 0.6rem 0.8rem;
+        background: rgba(200, 148, 58, 0.08);
+        border-left: 2px solid rgba(200, 148, 58, 0.5);
+        border-radius: 0 8px 8px 0;
+        transition: all 0.3s ease;
+    }
+
+    .context-panel:hover .context-insight {
+        background: rgba(200, 148, 58, 0.12);
+        border-left-color: rgba(200, 148, 58, 0.8);
+    }
+
+    .context-insight strong {
+        color: #8B5010;
+        font-weight: 600;
+        transition: color 0.3s ease;
+    }
+
+    .context-panel:hover .context-insight strong {
+        color: var(--primary);
+    }
+
+    .gauge-center {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+    }
+
+    .gauge-val {
+        font-family: 'Outfit', sans-serif;
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: var(--text);
+        line-height: 1;
+    }
+
+    .gauge-unit {
+        font-size: 0.65rem;
+        color: var(--text3);
+    }
+
+    .gauge-label {
+        font-size: 0.78rem;
+        color: var(--text2);
+        font-weight: 500;
+    }
+
+    .gauge-sub {
+        font-size: 0.7rem;
+        color: var(--text3);
+        margin-top: 0.15rem;
+    }
+
+    /* ── CONTEXT PANEL ── */
+    .context-header {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+    }
+
+    .context-title {
+        font-family: 'Syne', sans-serif;
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: var(--text);
+    }
+
+    .context-sub {
+        font-size: 0.72rem;
+        color: var(--text3);
+        font-family: 'DM Mono', monospace;
+    }
+
+    .context-bars {
+        display: flex;
+        flex-direction: column;
+        gap: 0.55rem;
+    }
+
+    .ctx-row {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+    }
+
+    .ctx-row-highlight .ctx-name {
+        font-weight: 600;
+        color: var(--text);
+    }
+
+    .ctx-flag-name {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        width: 90px;
+        flex-shrink: 0;
+    }
+
+    .ctx-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        flex-shrink: 0;
+    }
+
+    .ctx-name {
+        font-size: 0.78rem;
+        color: var(--text2);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .ctx-bar-track {
+        flex: 1;
+        height: 10px;
+        background: rgba(0, 0, 0, 0.06);
+        border-radius: 4px;
+        overflow: hidden;
+    }
+
+    .ctx-bar-fill {
+        height: 100%;
+        border-radius: 4px;
+        width: 0;
+        transition: width 1.2s cubic-bezier(0.4, 0, 0.2, 1) 0.6s;
+    }
+
+    .ctx-val {
+        font-family: 'DM Mono', monospace;
+        font-size: 0.75rem;
+        color: var(--text2);
+        width: 32px;
+        text-align: right;
+        flex-shrink: 0;
+    }
+
+    .context-insight {
+        font-size: 0.8rem;
+        color: var(--text2);
+        line-height: 1.4;
+        padding: 0.6rem 0.8rem;
+        background: rgba(200, 148, 58, 0.08);
+        border-left: 2px solid rgba(200, 148, 58, 0.5);
+        border-radius: 0 8px 8px 0;
+    }
+
+    .context-insight strong {
+        color: #8B5010;
+        font-weight: 600;
+    }
+
+    .gauge-wrap-sm {
+        width: 130px;
+        height: 130px;
+        margin: 0 auto;
+        position: relative;
+    }
+
+    .gauge-wrap-sm .gauge-svg {
+        width: 130px;
+        height: 130px;
+    }
+
+    .gauge-wrap-sm .gauge-center {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        text-align: center;
+    }
+
+    .gauge-wrap-sm .gauge-val {
+        font-size: clamp(1.2rem, 2vw, 1.5rem);
+        font-weight: 700;
+    }
+
+    .gauge-wrap-sm .gauge-unit {
+        font-size: 0.75rem;
+        color: var(--text3);
+    }
+
+    /* ── TIMELINE BADGE ── */
+    .timeline-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: var(--secondary);
+        animation: pulse 2s ease-in-out infinite;
+    }
+
+    /* ── FOOTER SECTION ── */
+
+    /* ── COUNTRY DESC ── */
+    .country-desc {
+        font-size: 0.96rem;
+        color: var(--text2);
+        line-height: 1.75;
+        text-align: justify;
+        padding: 1.25rem 1.25rem 1.25rem 1.5rem;
+        background: #fff;
+        border: 1px solid #e5e0d8;
+        border-left: 3px solid var(--primary);
+        border-radius: 0 10px 10px 0;
+        margin-top: 0.5rem;
+    }
+
+    @media (max-width: 900px) {
+        .intro-hero {
+            grid-template-columns: 1fr;
+        }
+
+        .gauge-card {
+            display: none;
+        }
+    }
+
+    /* ── PHASE CELLS ── */
+    .phase-cells {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 0.5rem;
+        margin-top: 0.6rem;
+    }
+
+    .phase-cell {
+        background: rgba(255, 255, 255, 0.6);
+        border: 1px solid rgba(255, 255, 255, 0.5);
+        border-radius: 16px;
+        padding: 0.75rem 1rem;
+        border-left: 3px solid var(--phase-color, var(--primary));
+        cursor: pointer;
+        transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s ease, background 0.3s ease, border-color 0.3s ease;
+        user-select: none;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.03), inset 0 1px 0 rgba(255,255,255,0.6);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .phase-cell::after {
+        content: '';
+        position: absolute;
+        top: 0; left: 0; bottom: 0;
+        width: 0;
+        background: linear-gradient(to right, color-mix(in srgb, var(--phase-color, var(--primary)) 6%, transparent), transparent);
+        transition: width 0.4s ease;
+        pointer-events: none;
+    }
+
+    .phase-cell:hover::after {
+        width: 100%;
+    }
+
+    .phase-cell:hover {
+        transform: translateY(-3px) scale(1.01);
+        background: rgba(255, 255, 255, 0.8);
+        border-color: rgba(255,255,255,0.6);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06), inset 0 1px 0 rgba(255,255,255,0.8);
+    }
+
+    .phase-cell:active {
+        transform: scale(0.98);
+    }
+
+    .phase-cell.active {
+        border-color: var(--phase-color, var(--primary));
+        background: rgba(255, 255, 255, 0.85);
+        box-shadow: 0 0 0 1px var(--phase-color, var(--primary)), 0 4px 16px color-mix(in srgb, var(--phase-color, var(--primary)) 15%, transparent);
+    }
+
+    .phase-period {
+        font-family: 'DM Mono', monospace;
+        font-size: 0.72rem;
+        color: var(--text3);
+        margin-bottom: 0.2rem;
+        letter-spacing: 0.04em;
+    }
+
+    .phase-name {
+        font-family: 'Outfit', sans-serif;
+        font-size: 0.95rem;
+        font-weight: 700;
+        color: var(--text);
+        margin-bottom: 0.15rem;
+    }
+
+    /* ── TIMELINE BADGE ── */
+    .timeline-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        background: #fff;
+        border: 1px solid #e5e0d8;
+        border-radius: 100px;
+        padding: 0.3rem 0.85rem;
+        font-size: 0.78rem;
+        color: var(--text2);
+    }
+
+    /* ── TIER FILTER CELLS ── */
+    .tier-cells {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 0.5rem;
+        margin-top: 0.6rem;
+        margin-bottom: 1rem;
+    }
+
+    .tier-cell {
+        background: rgba(255, 255, 255, 0.6);
+        border: 1px solid rgba(255, 255, 255, 0.5);
+        border-radius: 14px;
+        padding: 0.75rem 1rem;
+        border-left: 3px solid var(--tier-color, var(--primary));
+        cursor: pointer;
+        transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s ease, background 0.3s ease, border-color 0.3s ease;
+        user-select: none;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.03), inset 0 1px 0 rgba(255,255,255,0.6);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .tier-cell::after {
+        content: '';
+        position: absolute;
+        top: 0; left: 0; bottom: 0;
+        width: 0;
+        background: linear-gradient(to right, color-mix(in srgb, var(--tier-color, var(--primary)) 6%, transparent), transparent);
+        transition: width 0.4s ease;
+        pointer-events: none;
+    }
+
+    .tier-cell:hover::after {
+        width: 100%;
+    }
+
+    .tier-cell:hover {
+        background: rgba(255, 255, 255, 0.8);
+        border-color: rgba(255,255,255,0.6);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06), inset 0 1px 0 rgba(255,255,255,0.8);
+        transform: translateY(-2px);
+    }
+
+    .tier-cell.active {
+        border-color: var(--tier-color, var(--primary));
+        background: rgba(255, 255, 255, 0.85);
+        box-shadow: 0 0 0 1px var(--tier-color, var(--primary)), 0 4px 16px color-mix(in srgb, var(--tier-color, var(--primary)) 15%, transparent);
+    }
+
+    .tier-eyebrow {
+        font-family: 'DM Mono', monospace;
+        font-size: 0.68rem;
+        color: var(--tier-color, var(--text3));
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        margin-bottom: 0.2rem;
+    }
+
+    .tier-name {
+        font-family: 'Outfit', sans-serif;
+        font-size: 0.95rem;
+        font-weight: 700;
+        color: var(--text);
+        margin-bottom: 0.12rem;
+    }
+
+    .tier-desc {
+        font-size: 0.82rem;
+        color: var(--text2);
+        line-height: 1.4;
+    }
+
+    /* ── PHASE CELLS ── */
+    .phase-ai-result {
+        margin-top: 0.5rem;
+    }
+
+    .phase-driver {
+        font-size: 0.78rem;
+        color: var(--text2);
+        line-height: 1.4;
+        margin-top: 0.3rem;
+    }
+
+    .cagr-pill {
+        display: inline-block;
+        font-family: 'DM Mono', monospace;
+        font-size: 0.65rem;
+        color: var(--text3);
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 100px;
+        padding: 0.15rem 0.5rem;
+        margin-top: 0.4rem;
+        letter-spacing: 0.02em;
+    }
+
+    /* ── AI BTN WRAP ── */
+    .ai-btn-wrap {
+        display: flex;
+        justify-content: center;
+        margin: 0.75rem 0 0.25rem;
+    }
+
+    /* ── PHASE AI PANEL ── */
+    #phaseAIPanel {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 1.25rem;
+        margin-top: 0.5rem;
+    }
+
+    /* ── VARIABLES SCROLL ── */
+    .vars-scroll {
+        max-height: 220px;
+        overflow-y: auto;
+        padding-right: 0.5rem;
+        scrollbar-width: thin;
+        scrollbar-color: var(--border) transparent;
+    }
+
+    .vars-scroll::-webkit-scrollbar {
+        width: 4px;
+    }
+
+    .vars-scroll::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    .vars-scroll::-webkit-scrollbar-thumb {
+        background: var(--border);
+        border-radius: 4px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- ═══════════════════════════════════════════════
+     SECTION 1 — OVERVIEW
+═══════════════════════════════════════════════════ -->
+<section id="intro" class="section" style="padding-top: 1.5rem; position: relative; z-index: 1;">
+
+    <!-- Egypt Hero Banner -->
+    <div class="egypt-hero">
+        <div class="hero-img"></div>
+        <div class="hero-glow"></div>
+        <div class="hero-text">
+            <div class="hero-title">EGYPT</div>
+            <div class="hero-sub">CO₂ Emissions &amp; Climate Analysis &middot; 2001&ndash;2023</div>
+        </div>
+    </div>
+
+    <div class="section-header">
+        <div class="section-eyebrow">Country Overview</div>
+        <div style="display:flex;gap:0.75rem;align-items:center">
+            <div class="timeline-badge">
+                <div class="timeline-dot"></div>
+                <span>2001 — 2023</span>
+            </div>
+            <button class="btn-ai" onclick="loadAIInsight('overview')">
+                <svg viewBox="0 0 24 24">
+                    <circle cx="12" cy="12" r="3" />
+                    <path
+                        d="M12 2v3M12 19v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M2 12h3M19 12h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12" />
+                </svg>
+                AI Overview
+            </button>
+        </div>
+    </div>
+    <div id="overviewAIInsight"></div>
+
+    <!-- KPI Row -->
+    <div class="kpi-grid" id="kpiGrid">
+        <div class="kpi-card accent1">
+            <div class="kpi-icon" style="background:rgba(198,93,59,0.1)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#C65D3B" stroke-width="1.75" stroke-linecap="round"
+                    stroke-linejoin="round">
+                    <path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z" />
+                </svg>
+            </div>
+            <div class="kpi-label">Total CO₂ Emission</div>
+            <div class="kpi-value">—<span class="kpi-unit">Mt</span></div>
+            <span class="kpi-delta neu" id="kpi1d">—</span>
+            <div class="kpi-caption">Annual carbon dioxide emissions in megatonnes (Mt CO₂). Sourced from the Global
+                Carbon Project via Our World in Data.</div>
+        </div>
+        <div class="kpi-card accent2">
+            <div class="kpi-icon" style="background:rgba(94,140,97,0.1)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#5E8C61" stroke-width="1.75" stroke-linecap="round"
+                    stroke-linejoin="round">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                    <circle cx="12" cy="7" r="4" />
+                </svg>
+            </div>
+            <div class="kpi-label">Per Capita Emission</div>
+            <div class="kpi-value">—<span class="kpi-unit">t</span></div>
+            <span class="kpi-delta neu" id="kpi2d">vs world avg</span>
+            <div class="kpi-caption">Annual CO₂ per person (tonnes/person/year). Calculated as total CO₂ ÷ population
+                from UN Population Division.</div>
+        </div>
+        <div class="kpi-card accent3">
+            <div class="kpi-icon" style="background:rgba(201,168,76,0.1)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#C9A84C" stroke-width="1.75" stroke-linecap="round"
+                    stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10" />
+                    <line x1="2" y1="12" x2="22" y2="12" />
+                    <path
+                        d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+                </svg>
+            </div>
+            <div class="kpi-label">Global CO₂ Share</div>
+            <div class="kpi-value">—<span class="kpi-unit">%</span></div>
+            <span class="kpi-delta neu" id="kpi3d">of world total</span>
+            <div class="kpi-caption">Share of global CO₂ emissions (%). Country's annual emissions as a percentage of
+                worldwide total.</div>
+        </div>
+        <div class="kpi-card accent4">
+            <div class="kpi-icon" style="background:rgba(74,123,107,0.1)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#4A7B6B" stroke-width="1.75" stroke-linecap="round"
+                    stroke-linejoin="round">
+                    <line x1="12" y1="1" x2="12" y2="23" />
+                    <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+                </svg>
+            </div>
+            <div class="kpi-label">GDP per Capita</div>
+            <div class="kpi-value">—<span class="kpi-unit">USD</span></div>
+            <span class="kpi-delta neu" id="kpi4d">latest year</span>
+            <div class="kpi-caption">Gross Domestic Product per person (USD). Sourced from World Bank WDI indicators,
+                adjusted for purchasing power parity.</div>
+        </div>
+    </div>
+
+    <!-- Intro hero -->
+    <div class="intro-hero">
+        <div class="country-card">
+            <div class="country-flag-row">
+                <div class="country-flag" id="countryFlagEl">
+                    <div style="flex:1;background:#CE1126"></div>
+                    <div style="flex:1;background:#fff;display:flex;align-items:center;justify-content:center">
+                        <div style="width:9px;height:9px;background:#C09000;border-radius:50%"></div>
+                    </div>
+                    <div style="flex:1;background:#000"></div>
+                </div>
+                <div>
+                    <div class="country-name-big" id="countryNameBig" style="margin-top:-0rem">Egypt</div>
+                    <div class="country-iso" id="countryIsoBig">EGY</div>
+                </div>
+            </div>
+            <p class="country-desc" id="countryDesc" style="margin-top: 0.25rem">Loading country information…</p>
+            <div class="quick-stats" id="quickStats"></div>
+        </div>
+
+        <div class="context-panel">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start">
+                <div>
+                    <div class="context-title"
+                        style="font-family:'Outfit',sans-serif;font-size:1.10rem;font-weight:600;color:var(--text)">
+                        Global Context</div>
+                    <div style="font-size:0.78rem;color:var(--text2);margin-top:0.5rem">CO₂ per capita emissions</div>
+                </div>
+                <span class="card-badge"
+                    style="background:var(--secondary-bg);color:var(--secondary);border:1px solid rgba(94,140,97,0.15)">t/person</span>
+            </div>
+            <div class="gauge-wrap-sm">
+                <svg class="gauge-svg" viewBox="0 0 120 120">
+                    <circle class="gauge-bg" cx="60" cy="60" r="54" />
+                    <circle class="gauge-fill" cx="60" cy="60" r="54" id="gaugeFill" />
+                </svg>
+                <div class="gauge-center">
+                    <div class="gauge-val" id="gaugeVal">—</div>
+                    <div class="gauge-unit">t/cap</div>
+                </div>
+            </div>
+            <div class="context-bars" id="contextBars">
+                <div class="ctx-row ctx-row-highlight">
+                    <div class="ctx-flag-name">
+                        <span class="ctx-name">Egypt</span>
+                    </div>
+                    <div class="ctx-bar-track">
+                        <div class="ctx-bar-fill" id="egyptCtxBar"
+                            style="width:0%;background:linear-gradient(90deg,#C8943A,#E8B86D)"></div>
+                    </div>
+                    <span class="ctx-val" id="egyptCtxVal">—</span>
+                </div>
+                <div class="ctx-row">
+                    <div class="ctx-flag-name">
+                        <span class="ctx-name">India</span>
+                    </div>
+                    <div class="ctx-bar-track">
+                        <div class="ctx-bar-fill" style="width:11%;background:#81B29A99"></div>
+                    </div>
+                    <span class="ctx-val">2.02</span>
+                </div>
+                <div class="ctx-row">
+                    <div class="ctx-flag-name">
+                        <span class="ctx-name">World avg</span>
+                    </div>
+                    <div class="ctx-bar-track">
+                        <div class="ctx-bar-fill" style="width:26%;background:rgba(136,135,128,0.35)"></div>
+                    </div>
+                    <span class="ctx-val">4.71</span>
+                </div>
+                <div class="ctx-row">
+                    <div class="ctx-flag-name">
+                        <span class="ctx-name">Saudi Arabia</span>
+                    </div>
+                    <div class="ctx-bar-track">
+                        <div class="ctx-bar-fill" style="width:100%;background:rgba(224,122,95,0.45)"></div>
+                    </div>
+                    <span class="ctx-val">18.4</span>
+                </div>
+                <div class="ctx-row">
+                    <div class="ctx-flag-name">
+                        <span class="ctx-name">USA</span>
+                    </div>
+                    <div class="ctx-bar-track">
+                        <div class="ctx-bar-fill" style="width:81%;background:rgba(61,64,91,0.35)"></div>
+                    </div>
+                    <span class="ctx-val">14.9</span>
+                </div>
+            </div>
+            <div class="context-insight">
+                Egypt emits <strong>6.8× less</strong> CO₂ per capita than the USA
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════
+     SECTION 2 — EMISSIONS TREND
+═══════════════════════════════════════════════ -->
+<section id="charts" class="section">
+    <div class="section-header">
+        <div>
+            <div class="section-eyebrow">Emissions Trend</div>
+            <h1 class="section-title">2001 — 2023 Analysis</h1>
+        </div>
+    </div>
+
+    <!-- Side by side: Total + Per Capita -->
+    <div class="chart-grid-2">
+        <div class="card">
+            <div class="card-head">
+                <span class="card-title">Total CO₂ Emissions</span>
+                <span class="card-badge">Mt CO₂</span>
+            </div>
+            <div class="chart-container" id="totalEmissionsChart">
+                <div class="spinner-wrap">
+                    <div class="spin"></div>Loading…
+                </div>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-head">
+                <span class="card-title">Per Capita CO₂</span>
+                <span class="card-badge">t / person</span>
+            </div>
+            <div class="chart-container" id="perCapitaChart">
+                <div class="spinner-wrap">
+                    <div class="spin"></div>Loading…
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="ai-btn-wrap" id="phaseAiBtnWrap" style="display:none">
+        <button class="btn-generate" id="phaseAiBtn" onclick="loadPhaseAI()">
+            Generate AI Analysis for this period →
+        </button>
+    </div>
+
+    <div class="phase-cells" id="emissionsPhaseCells"></div>
+
+    <div id="phaseAIPanel" style="display:none"></div>
+    <div id="trendAIInsight"></div>
+</section>
+
+<!-- ═══════════════════════════════════════════════
+     SECTION 3 — CARBON INEQUALITY
+═══════════════════════════════════════════════ -->
+<section id="inequality" class="section">
+    <div class="section-header">
+        <div>
+            <div class="section-eyebrow">Carbon Inequality</div>
+            <h1 class="section-title">Global Comparison</h1>
+        </div>
+        <button class="btn-ai" onclick="loadAIInsight('comparison')">
+            <svg viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="3" />
+                <path
+                    d="M12 2v3M12 19v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M2 12h3M19 12h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12" />
+            </svg>
+            AI Analysis
+        </button>
+    </div>
+
+    <div class="tier-cells" id="tierCells"></div>
+
+    <div class="comparison-controls" style="margin-bottom: 1rem;">
+        <div class="year-selector">
+            <select id="compYear" onchange="loadComparisonCharts(currentTier)">
+                <!-- Options populated by JS -->
+            </select>
+        </div>
+    </div>
+
+    <!-- Side by side: Comparison bar + Scatter -->
+    <div class="chart-grid-2">
+        <div class="card">
+            <div class="card-head">
+                <span class="card-title">Per Capita Comparison</span>
+                <span class="card-badge">t CO₂ / person</span>
+            </div>
+            <div class="chart-container" id="comparisonChart">
+                <div class="spinner-wrap">
+                    <div class="spin"></div>Loading…
+                </div>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-head">
+                <span class="card-title">GDP vs CO₂ Emissions</span>
+                <span class="card-badge">scatter</span>
+            </div>
+            <div class="chart-container" id="scatterChart">
+                <div class="spinner-wrap">
+                    <div class="spin"></div>Loading…
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Side by side: HDI-Adjusted + Carbon Intensity -->
+    <div class="chart-grid-2">
+        <div class="card">
+            <div class="card-head">
+                <span class="card-title">HDI-Adjusted Emissions</span>
+                <span class="card-badge">CO₂ / HDI score</span>
+            </div>
+            <div class="chart-container" id="hdiChart">
+                <div class="spinner-wrap">
+                    <div class="spin"></div>Loading…
+                </div>
+            </div>
+            <div style="font-size:10px;color:#5C3A2E;font-style:italic;padding:0 0.75rem 0.5rem;text-align:left">Lower =
+                more efficient human development per unit of CO₂ emission</div>
+        </div>
+        <div class="card">
+            <div class="card-head">
+                <span class="card-title">Carbon Intensity of GDP</span>
+                <span class="card-badge">t CO₂ / million USD</span>
+            </div>
+            <div class="chart-container" id="intensityChart">
+                <div class="spinner-wrap">
+                    <div class="spin"></div>Loading…
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="comparisonAIInsight"></div>
+</section>
+
+<!-- ═══════════════════════════════════════════════
+     SECTION 4 — SOURCES BREAKDOWN
+═══════════════════════════════════════════════ -->
+<section id="sources-breakdown" class="section">
+    <div class="section-header">
+        <div>
+            <div class="section-eyebrow">Emission Sources</div>
+            <h1 class="section-title">Fuel Mix Breakdown</h1>
+        </div>
+        <div style="display:flex;align-items:center;gap:0.75rem">
+            <div class="source-toggle">
+                <button class="toggle-btn active" data-mode="co2" id="btn-co2">CO₂</button>
+                <button class="toggle-btn" data-mode="non-co2" id="btn-nonco2">GHG</button>
+            </div>
+            <button class="btn-ai" onclick="loadAIInsight('sources')">
+                <svg viewBox="0 0 24 24">
+                    <circle cx="12" cy="12" r="3" />
+                    <path
+                        d="M12 2v3M12 19v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M2 12h3M19 12h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12" />
+                </svg>
+                AI Analysis
+            </button>
+        </div>
+    </div>
+
+    <!-- Side by side: donut + bar breakdown -->
+    <div class="chart-grid-2">
+        <div class="card">
+            <div class="card-head">
+                <span class="card-title" id="sourcesChartTitle">CO₂ by Source</span>
+                <span class="card-badge">2023</span>
+            </div>
+            <div class="chart-container" id="sourcesChart">
+                <div class="spinner-wrap">
+                    <div class="spin"></div>Loading…
+                </div>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-head">
+                <span class="card-title" id="sourcesTimeChartTitle">Sources Over Time</span>
+                <span class="card-badge" id="sourcesTimeChartBadge">Mt CO₂</span>
+            </div>
+            <div class="chart-container" id="sourcesTimeChart">
+                <div class="spinner-wrap">
+                    <div class="spin"></div>Loading…
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="sourcesFootnote" class="chart-footnote" style="display:none">
+        Non-CO₂ values calculated using GWP₁₀₀ metric via OWID/IPCC
+    </div>
+
+    <div id="sourcesAIInsight"></div>
+</section>
+
+<!-- ═══════════════════════════════════════════════
+     SECTION 5 — AI INSIGHTS
+═══════════════════════════════════════════════ -->
+<section id="ai-insights" class="section">
+    <div class="section-header">
+        <div>
+            <div class="section-eyebrow">AI-Powered</div>
+            <h1 class="section-title">Climate Justice Reflection</h1>
+        </div>
+    </div>
+
+    <div class="card" id="climateReflectionCard">
+        <div class="reflection-cta" id="reflectionCTA">
+            <div class="reflection-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#5E8C61" stroke-width="1.75" stroke-linecap="round"
+                    stroke-linejoin="round" width="24" height="24">
+                    <circle cx="12" cy="12" r="10" />
+                    <path d="M12 6v6l4 2" />
+                </svg>
+            </div>
+            <div class="card-title">Generate AI Climate Analysis</div>
+            <p class="reflection-hint">
+                Get an AI-powered 200–300 word climate justice reflection based on
+                the emissions data, development level, and global responsibility.
+            </p>
+            <button class="btn-generate" onclick="generateClimateReflection()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round">
+                    <circle cx="12" cy="12" r="3" />
+                    <path
+                        d="M12 2v3M12 19v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M2 12h3M19 12h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12" />
+                </svg>
+                Generate Reflection
+            </button>
+        </div>
+        <div id="climateReflection" style="display:none"></div>
+    </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════
+     SECTION 6 — DATA SOURCES
+═══════════════════════════════════════════════ -->
+<section id="sources" class="section">
+    <div class="section-header">
+        <div>
+            <div class="section-eyebrow">References</div>
+            <h1 class="section-title">Data Sources & Credits</h1>
+        </div>
+    </div>
+
+    <div class="chart-grid-2">
+        <div class="card">
+            <div class="card-head"><span class="card-title">Primary Datasets</span></div>
+            <div class="source-row">
+                <span class="source-label">Our World in Data — OWID CO₂</span>
+                <a class="source-link" href="https://github.com/owid/co2-data" target="_blank">github/owid ↗</a>
+            </div>
+            <div class="source-row">
+                <span class="source-label">UNDP Human Development Report</span>
+                <a class="source-link" href="https://hdr.undp.org/data-center" target="_blank">hdr.undp.org/data-center
+                    ↗</a>
+            </div>
+            <div class="source-row">
+                <span class="source-label">World Bank WDI</span>
+                <a class="source-link" href="https://data.worldbank.org" target="_blank">data.worldbank.org ↗</a>
+            </div>
+            <div class="source-row">
+                <span class="source-label">UN Population Division</span>
+                <a class="source-link" href="https://population.un.org" target="_blank">population.un.org ↗</a>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-head"><span class="card-title">Variables Used</span></div>
+            <div class="vars-scroll">
+                <div class="source-row">
+                    <span class="source-label"
+                        style="font-family:'DM Mono',monospace;font-size:0.82rem;color:var(--primary)">co2</span>
+                    <span style="font-size:0.82rem;color:var(--text3)">Annual CO₂ emissions (Mt)</span>
+                </div>
+                <div class="source-row">
+                    <span class="source-label"
+                        style="font-family:'DM Mono',monospace;font-size:0.82rem;color:var(--primary)">co2_per_capita</span>
+                    <span style="font-size:0.82rem;color:var(--text3)">Per person (tonnes/year)</span>
+                </div>
+                <div class="source-row">
+                    <span class="source-label"
+                        style="font-family:'DM Mono',monospace;font-size:0.82rem;color:var(--primary)">share_global_co2</span>
+                    <span style="font-size:0.82rem;color:var(--text3)">% of world total</span>
+                </div>
+                <div class="source-row">
+                    <span class="source-label"
+                        style="font-family:'DM Mono',monospace;font-size:0.82rem;color:var(--primary)">gdp</span>
+                    <span style="font-size:0.82rem;color:var(--text3)">GDP (USD)</span>
+                </div>
+                <div class="source-row">
+                    <span class="source-label"
+                        style="font-family:'DM Mono',monospace;font-size:0.82rem;color:var(--primary)">population</span>
+                    <span style="font-size:0.82rem;color:var(--text3)">Population count</span>
+                </div>
+                <div class="source-row">
+                    <span class="source-label"
+                        style="font-family:'DM Mono',monospace;font-size:0.82rem;color:var(--primary)">gdp_per_capita</span>
+                    <span style="font-size:0.82rem;color:var(--text3)">GDP / person (USD)</span>
+                </div>
+                <div class="source-row">
+                    <span class="source-label"
+                        style="font-family:'DM Mono',monospace;font-size:0.82rem;color:var(--primary)">cumulative_co2</span>
+                    <span style="font-size:0.82rem;color:var(--text3)">Cumulative emissions since 1750</span>
+                </div>
+                <div class="source-row">
+                    <span class="source-label"
+                        style="font-family:'DM Mono',monospace;font-size:0.82rem;color:var(--primary)">coal_co2</span>
+                    <span style="font-size:0.82rem;color:var(--text3)">From coal combustion</span>
+                </div>
+                <div class="source-row">
+                    <span class="source-label"
+                        style="font-family:'DM Mono',monospace;font-size:0.82rem;color:var(--primary)">oil_co2</span>
+                    <span style="font-size:0.82rem;color:var(--text3)">From oil combustion</span>
+                </div>
+                <div class="source-row">
+                    <span class="source-label"
+                        style="font-family:'DM Mono',monospace;font-size:0.82rem;color:var(--primary)">gas_co2</span>
+                    <span style="font-size:0.82rem;color:var(--text3)">From gas combustion</span>
+                </div>
+                <div class="source-row">
+                    <span class="source-label"
+                        style="font-family:'DM Mono',monospace;font-size:0.82rem;color:var(--primary)">cement_co2</span>
+                    <span style="font-size:0.82rem;color:var(--text3)">From cement production</span>
+                </div>
+                <div class="source-row">
+                    <span class="source-label"
+                        style="font-family:'DM Mono',monospace;font-size:0.82rem;color:var(--primary)">flaring_co2</span>
+                    <span style="font-size:0.82rem;color:var(--text3)">From gas flaring</span>
+                </div>
+                <div class="source-row">
+                    <span class="source-label"
+                        style="font-family:'DM Mono',monospace;font-size:0.82rem;color:var(--secondary)">total_ghg_excluding_lucf</span>
+                    <span style="font-size:0.82rem;color:var(--text3)">Total GHG excl. LULUCF (Mt CO₂e)</span>
+                </div>
+                <div class="source-row">
+                    <span class="source-label"
+                        style="font-family:'DM Mono',monospace;font-size:0.82rem;color:var(--secondary)">methane</span>
+                    <span style="font-size:0.82rem;color:var(--text3)">CH₄ emissions (Mt CO₂e)</span>
+                </div>
+                <div class="source-row">
+                    <span class="source-label"
+                        style="font-family:'DM Mono',monospace;font-size:0.82rem;color:var(--secondary)">nitrous_oxide</span>
+                    <span style="font-size:0.82rem;color:var(--text3)">N₂O emissions (Mt CO₂e)</span>
+                </div>
+                <div class="source-row">
+                    <span class="source-label"
+                        style="font-family:'DM Mono',monospace;font-size:0.82rem;color:var(--secondary)">land_use_change_co2</span>
+                    <span style="font-size:0.82rem;color:var(--text3)">LULUCF CO₂ (Mt)</span>
+                </div>
+                <div class="source-row">
+                    <span class="source-label"
+                        style="font-family:'DM Mono',monospace;font-size:0.82rem;color:var(--primary)">carbon_intensity</span>
+                    <span style="font-size:0.82rem;color:var(--text3)">CO₂ / GDP (t per million USD)</span>
+                </div>
+                <div class="source-row">
+                    <span class="source-label"
+                        style="font-family:'DM Mono',monospace;font-size:0.82rem;color:var(--primary)">hdi_adjusted</span>
+                    <span style="font-size:0.82rem;color:var(--text3)">CO₂ per capita / HDI score</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="chart-grid-2" style="margin-top:1rem; margin-bottom:0;">
+        <div class="card" style="margin-top:0;">
+            <div class="card-head"><span class="card-title">Climate & Policy References</span></div>
+            <div
+                style="margin-top:0.75rem;display:flex;flex-direction:column;gap:0.6rem;font-size:0.88rem;color:var(--text2);line-height:1.6">
+                <div><strong style="color:var(--text)">IEA</strong> — International Energy Agency. (2023). <em>World Energy
+                        Outlook 2023</em>. <a href="https://www.iea.org/reports/world-energy-outlook-2023" target="_blank"
+                        style="color:var(--primary)">iea.org</a></div>
+                <div><strong style="color:var(--text)">IPCC</strong> — IPCC. (2023). <em>Climate change 2023: Synthesis
+                        report</em>. AR6. <a href="https://doi.org/10.59327/IPCC/AR6-9789291691647" target="_blank"
+                        style="color:var(--primary)">doi.org</a></div>
+                <div><strong style="color:var(--text)">ICAP</strong> — International Carbon Action Partnership. (2023).
+                    <em>Emissions trading worldwide: Status report 2023</em>. <a
+                        href="https://icapcarbonaction.com/en/publications/emissions-trading-worldwide-2023-icap-status-report"
+                        target="_blank" style="color:var(--primary)">icapcarbonaction.com</a></div>
+                <div><strong style="color:var(--text)">Climate Transparency</strong> — Climate Transparency. (2022).
+                    <em>Climate transparency report 2022</em>. <a
+                        href="https://www.climate-transparency.org/countries/asia/south-korea" target="_blank"
+                        style="color:var(--primary)">climate-transparency.org</a></div>
+            </div>
+        </div>
+
+        <div class="card" style="margin-top:0;">
+            <div class="card-head"><span class="card-title">AI Methodology Citations</span></div>
+            <div
+                style="margin-top:0.75rem;display:flex;flex-direction:column;gap:0.5rem;font-size:0.85rem;color:var(--text2);line-height:1.5">
+                <div><strong style="color:var(--text)">Step 3.5 Flash</strong> — 196B MoE model via OpenRouter</div>
+                <div><strong style="color:var(--text)">Qwen 3.6 Plus Preview</strong> — 1M context, hybrid architecture. <a
+                        href="https://qwen.ai/blog/qwen3.6-plus-preview" target="_blank"
+                        style="color:var(--primary)">qwen.ai</a></div>
+                <div><strong style="color:var(--text)">NVIDIA Nemotron-3</strong> — Super (120B) & Nano (30B) hybrids. <a
+                        href="https://www.nvidia.com/en-us/ai-data-science/generative-ai/" target="_blank"
+                        style="color:var(--primary)">nvidia.com</a></div>
+                <div><strong style="color:var(--text)">Arcee-AI Trinity Mini</strong> — 26B MoE for efficient reasoning. <a
+                        href="https://arcee.ai/models" target="_blank" style="color:var(--primary)">arcee.ai</a></div>
+            </div>
+            <div style="margin-top:0.5rem;font-size:0.8rem;color:var(--text3);font-style:italic">
+                All models accessed via OpenRouter API (openrouter.ai)
+            </div>
+        </div>
+    </div>
+
+    <div class="card" style="margin-top:1rem;background:rgba(198,93,59,0.06);border-left:3px solid var(--primary)">
+        <div style="font-size:0.95rem;font-weight:600;color:var(--text);margin-bottom:0.5rem">Benchmark Reference</div>
+        <div style="font-size:0.85rem;color:var(--text2);line-height:1.6">
+            The <strong style="color:var(--text)">300 Mt CO₂e threshold</strong> is utilized as a sectoral
+            decarbonization indicator, aligned with the IEA's (2023) Net Zero Roadmap and regional 1.5°C "fair share"
+            pathways (e.g., Climate Transparency, 2022), to evaluate a country's trajectory toward mid-century climate
+            neutrality.<br><br>
+            <strong style="color:var(--text)">UNEP Emissions Gap Report 2024:</strong> The annual UNEP report assesses
+            the gap between planned emissions reductions and pathways consistent with Paris Agreement goals. The 2024
+            edition emphasizes that current NDCs remain insufficient to limit warming to 1.5°C. <a
+                href="https://www.unep.org/interactives/emissions-gap-report/2024/" target="_blank"
+                style="color:var(--primary)">unep.org</a><br><br>
+            <strong style="color:var(--text)">Climate Change Performance Index (CCPI) 2024:</strong> Egypt ranks <strong
+                style="color:var(--primary)">22nd globally</strong> and <strong style="color:var(--primary)">2nd in
+                MENA</strong> (Middle East & North Africa), based on categories including GHG emissions, renewable
+            energy, energy use, and climate policy. <a href="https://ccpi.org/countries/" target="_blank"
+                style="color:var(--primary)">ccpi.org</a><br><br>
+            <strong style="color:var(--text)">Growth Metrics (CAGR):</strong> Compound Annual Growth Rate calculated as:
+            <code
+                style="background:rgba(0,0,0,0.06);padding:0.1rem 0.3rem;border-radius:3px">CAGR = ((End Value / Start Value)<sup>1/years</sup> - 1) × 100</code>.
+            Used to assess emission trends over multi-year periods.<br><br>
+            <strong style="color:var(--text)">Egypt's Key Phases:</strong>
+            <ul style="margin:0.3rem 0 0 1rem;padding-left:0.8rem">
+                <li><strong style="color:var(--text)">Pre-Arab Spring (2001–2010):</strong> Stable emissions trajectory,
+                    coal and oil dominance</li>
+                <li><strong style="color:var(--text)">Arab Spring & Reform (2011–2016):</strong> Political transition,
+                    economic reforms, IMF program initiation</li>
+                <li><strong style="color:var(--text)">Zohr Discovery (2017–present):</strong> Major gas field discovery
+                    (2015) transformed energy mix, surge in natural gas production, decline in oil share</li>
+            </ul><br>
+            <strong style="color:var(--text)">HDI-Adjusted Emissions:</strong> The indicator combines CO₂ per capita
+            with Human Development Index to assess climate justice and equitable development. Based on UNDP's Planetary
+            pressures-adjusted HDI (PHDI) framework which adjusts HDI for environmental pressures. <a
+                href="https://hdr.undp.org/system/files/documents/phditn.pdf" target="_blank"
+                style="color:var(--primary)">hdr.undp.org</a>
+        </div>
+    </div>
+
+</section>
+
+</section>
+
+{% endblock %}
+
+{% block footer %}
+<!-- ═══════════════════════════════════════════════
+     FOOTER — Full-bleed dark section
+═══════════════════════════════════════════════════ -->
+<style>
+    /* ── SITE FOOTER ── */
+    .site-footer {
+        position: relative;
+        width: 100%;
+        overflow: hidden;
+    }
+
+    /* Gradient transition from light (page bg) to dark */
+    .footer-gradient {
+        height: 130px;
+        position: relative;
+        background: linear-gradient(to bottom,
+                transparent 0%,
+                rgba(19, 17, 16, 0.02) 12%,
+                rgba(19, 17, 16, 0.06) 24%,
+                rgba(19, 17, 16, 0.15) 36%,
+                rgba(19, 17, 16, 0.3) 48%,
+                rgba(19, 17, 16, 0.5) 60%,
+                rgba(19, 17, 16, 0.7) 72%,
+                rgba(19, 17, 16, 0.88) 84%,
+                #131110 100%);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+    }
+
+    .footer-dark {
+        background: #131110;
+        position: relative;
+        padding: 3.5rem 0 2.5rem;
+    }
+
+    /* Animated dot grid SVG pattern */
+    .footer-bg-pattern {
+        position: absolute;
+        inset: 0;
+        overflow: hidden;
+        pointer-events: none;
+        opacity: 0.4;
+    }
+
+    .footer-bg-pattern svg {
+        width: 100%;
+        height: 100%;
+    }
+
+    .footer-dot {
+        fill: rgba(198, 93, 59, 0.15);
+        animation: footerDotPulse 4s ease-in-out infinite;
+    }
+
+    .footer-dot:nth-child(odd) {
+        fill: rgba(94, 140, 97, 0.12);
+        animation-delay: -2s;
+    }
+
+    .footer-dot:nth-child(3n) {
+        fill: rgba(201, 168, 76, 0.10);
+        animation-delay: -1s;
+    }
+
+    @keyframes footerDotPulse {
+
+        0%,
+        100% {
+            opacity: 0.3;
+            r: 1.5;
+        }
+
+        50% {
+            opacity: 1;
+            r: 2;
+        }
+    }
+
+    /* Radial glow behind footer content */
+    .footer-glow {
+        position: absolute;
+        top: -60px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 600px;
+        height: 300px;
+        background: radial-gradient(ellipse at center, rgba(198, 93, 59, 0.06) 0%, transparent 70%);
+        pointer-events: none;
+        z-index: 0;
+    }
+
+    .footer-inner {
+        max-width: 1000px;
+        margin: 0 auto;
+        padding: 0 2.5rem;
+        position: relative;
+        z-index: 2;
+    }
+
+    /* Footer grid */
+    .footer-grid {
+        display: grid;
+        grid-template-columns: 1.2fr 1fr 1fr;
+        gap: 2.5rem;
+    }
+
+    .footer-col {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .footer-col-title {
+        font-family: 'DM Mono', monospace;
+        font-size: 0.72rem;
+        text-transform: uppercase;
+        letter-spacing: 0.18em;
+        color: rgba(198, 93, 59, 0.85);
+        margin-bottom: 0.5rem;
+        font-weight: 500;
+        position: relative;
+        padding-bottom: 0.6rem;
+    }
+
+    .footer-col-title::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 24px;
+        height: 1px;
+        background: linear-gradient(to right, rgba(198, 93, 59, 0.4), transparent);
+    }
+
+    /* Info items with hover glass card effect */
+    .footer-info {
+        display: flex;
+        align-items: center;
+        gap: 0.65rem;
+        font-size: 0.88rem;
+        color: rgba(210, 206, 202, 0.85);
+        padding: 0.5rem 0.65rem;
+        border-radius: 10px;
+        margin-left: -0.65rem;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        border: 1px solid transparent;
+    }
+
+    .footer-info:hover {
+        color: rgba(255, 255, 255, 0.9);
+        background: rgba(255, 255, 255, 0.04);
+        border-color: rgba(255, 255, 255, 0.06);
+        backdrop-filter: blur(8px);
+        transform: translateX(4px);
+    }
+
+    .footer-info svg {
+        flex-shrink: 0;
+        opacity: 0.45;
+        transition: all 0.3s ease;
+    }
+
+    .footer-info:hover svg {
+        opacity: 0.85;
+        color: var(--primary);
+        stroke: rgba(198, 93, 59, 0.8);
+    }
+
+    /* Interactive connect links */
+    .footer-link {
+        display: flex;
+        align-items: center;
+        gap: 0.65rem;
+        color: rgba(210, 206, 202, 0.85);
+        text-decoration: none;
+        font-size: 0.88rem;
+        padding: 0.5rem 0.65rem;
+        border-radius: 10px;
+        margin-left: -0.65rem;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        border: 1px solid transparent;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .footer-link::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 0;
+        background: linear-gradient(to right, rgba(198, 93, 59, 0.08), transparent);
+        transition: width 0.4s ease;
+        border-radius: 10px;
+    }
+
+    .footer-link:hover {
+        color: #ffffff;
+        background: rgba(255, 255, 255, 0.04);
+        border-color: rgba(255, 255, 255, 0.08);
+        transform: translateX(4px);
+    }
+
+    .footer-link:hover::before {
+        width: 100%;
+    }
+
+    .footer-link svg {
+        flex-shrink: 0;
+        opacity: 0.5;
+        transition: all 0.3s ease;
+        position: relative;
+        z-index: 1;
+    }
+
+    .footer-link span {
+        position: relative;
+        z-index: 1;
+    }
+
+    .footer-link:hover svg {
+        opacity: 1;
+        transform: scale(1.15);
+    }
+
+    /* Bottom bar */
+    .footer-bottom {
+        margin-top: 2.5rem;
+        padding-top: 1.5rem;
+        border-top: 1px solid rgba(255, 255, 255, 0.06);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .footer-copy {
+        font-size: 0.72rem;
+        color: rgba(160, 154, 148, 0.5);
+        font-family: 'DM Mono', monospace;
+        letter-spacing: 0.02em;
+    }
+
+    .footer-made {
+        font-size: 0.72rem;
+        color: rgba(160, 154, 148, 0.4);
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+    }
+
+    .footer-heart {
+        display: inline-block;
+        color: rgba(198, 93, 59, 0.6);
+        animation: heartBeat 2s ease-in-out infinite;
+    }
+
+    @keyframes heartBeat {
+
+        0%,
+        100% {
+            transform: scale(1);
+        }
+
+        14% {
+            transform: scale(1.15);
+        }
+
+        28% {
+            transform: scale(1);
+        }
+
+        42% {
+            transform: scale(1.15);
+        }
+
+        56% {
+            transform: scale(1);
+        }
+    }
+
+    /* Staggered entrance animation */
+    .footer-col {
+        opacity: 0;
+        transform: translateY(20px);
+        transition: opacity 0.6s ease, transform 0.6s ease;
+    }
+
+    .footer-col.footer-visible {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+    .footer-col:nth-child(1) {
+        transition-delay: 0.1s;
+    }
+
+    .footer-col:nth-child(2) {
+        transition-delay: 0.25s;
+    }
+
+    .footer-col:nth-child(3) {
+        transition-delay: 0.4s;
+    }
+
+    .footer-bottom {
+        opacity: 0;
+        transform: translateY(10px);
+        transition: opacity 0.6s ease 0.55s, transform 0.6s ease 0.55s;
+    }
+
+    .footer-bottom.footer-visible {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+    @media (max-width: 768px) {
+        .footer-grid {
+            grid-template-columns: 1fr;
+            gap: 2rem;
+        }
+
+        .footer-gradient {
+            height: 80px;
+        }
+
+        .footer-bottom {
+            flex-direction: column;
+            gap: 0.5rem;
+            text-align: center;
+        }
+    }
+</style>
+
+<footer class="site-footer" id="site-footer">
+    <!-- Smooth gradient transition -->
+    <div class="footer-gradient"></div>
+
+    <!-- Dark content area -->
+    <div class="footer-dark">
+        <!-- Animated dot grid background -->
+        <div class="footer-bg-pattern">
+            <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                    <pattern id="footerDots" x="0" y="0" width="40" height="40" patternUnits="userSpaceOnUse">
+                        <circle class="footer-dot" cx="20" cy="20" r="1.5" />
+                    </pattern>
+                </defs>
+                <rect width="100%" height="100%" fill="url(#footerDots)" />
+            </svg>
+        </div>
+
+        <!-- Radial glow -->
+        <div class="footer-glow"></div>
+
+        <div class="footer-inner">
+            <div class="footer-grid">
+                <!-- Developer Column -->
+                <div class="footer-col">
+                    <div class="footer-col-title">Developer</div>
+                    <div class="footer-info">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
+                            stroke-linecap="round" stroke-linejoin="round" width="16" height="16">
+                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                            <circle cx="9" cy="7" r="4" />
+                        </svg>
+                        <span>Shreyit Sinha</span>
+                    </div>
+                    <div class="footer-info">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
+                            stroke-linecap="round" stroke-linejoin="round" width="16" height="16">
+                            <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
+                            <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
+                        </svg>
+                        <span>Climate Change, Sustainability &amp; Development</span>
+                    </div>
+                    <div class="footer-info">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
+                            stroke-linecap="round" stroke-linejoin="round" width="16" height="16">
+                            <circle cx="12" cy="12" r="10" />
+                            <line x1="2" y1="12" x2="22" y2="12" />
+                            <path
+                                d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+                        </svg>
+                        <span>TISS Mumbai</span>
+                    </div>
+                </div>
+
+                <!-- Built With Column -->
+                <div class="footer-col">
+                    <div class="footer-col-title">Built With</div>
+                    <div class="footer-info">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
+                            stroke-linecap="round" stroke-linejoin="round" width="16" height="16">
+                            <path
+                                d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
+                        </svg>
+                        <span>Python Flask · HTML/CSS · Plotly.js</span>
+                    </div>
+                    <div class="footer-info">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
+                            stroke-linecap="round" stroke-linejoin="round" width="16" height="16">
+                            <circle cx="12" cy="12" r="3" />
+                            <path
+                                d="M12 2v3M12 19v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M2 12h3M19 12h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12" />
+                        </svg>
+                        <span>OpenRouter AI</span>
+                    </div>
+                    <div class="footer-info">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
+                            stroke-linecap="round" stroke-linejoin="round" width="16" height="16">
+                            <ellipse cx="12" cy="5" rx="9" ry="3" />
+                            <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3" />
+                            <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5" />
+                        </svg>
+                        <span>Our World in Data</span>
+                    </div>
+                </div>
+
+                <!-- Connect Column -->
+                <div class="footer-col">
+                    <div class="footer-col-title">Connect</div>
+                    <a href="mailto:sinhashreyit@gmail.com" class="footer-link">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
+                            stroke-linecap="round" stroke-linejoin="round" width="16" height="16">
+                            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+                            <polyline points="22,6 12,13 2,6" />
+                        </svg>
+                        <span>sinhashreyit@gmail.com</span>
+                    </a>
+                    <a href="https://www.linkedin.com/in/shreyit-sinha" target="_blank" class="footer-link">
+                        <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16">
+                            <path
+                                d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" />
+                        </svg>
+                        <span>LinkedIn</span>
+                    </a>
+                    <a href="https://github.com/Shreyit" target="_blank" class="footer-link">
+                        <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16">
+                            <path
+                                d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" />
+                        </svg>
+                        <span>GitHub</span>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Bottom bar -->
+            <div class="footer-bottom">
+                <div class="footer-copy">© 2025 Shreyit Sinha — CO₂ Emission Trend Analysis</div>
+                <div class="footer-made">
+                    Made with <span class="footer-heart">♥</span> for climate awareness
+                </div>
+            </div>
+        </div>
+    </div>
+</footer>
+
+<script>
+    // Footer entrance animation on scroll
+    const footerObserver = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('footer-visible');
+            }
+        });
+    }, { threshold: 0.15 });
+
+    document.querySelectorAll('.footer-col, .footer-bottom').forEach(el => footerObserver.observe(el));
+</script>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const countryNames = {{ countries_dict| tojson | safe }};
+
+    const countryDescriptions = {
+        'EGY': "Egypt spans the Nile Valley, home to 114 million people growing at nearly 2 million annually, with 95% concentrated along the Nile Delta. One of the world's most climate-vulnerable coastal zones faces sea-level rise. The Zohr gas field discovery (2015) made Egypt a net gas exporter by 2019, though fossil fuels still account for over 90% of electricity generation. Despite navigating the Arab Spring (2011), IMF currency reform (2016), and COVID-19, Egypt contributes less than 0.7% of global CO₂ while hosting COP27 (2022) and committing to 42% renewable electricity by 2035. A defining case of climate injustice where vulnerability far exceeds responsibility.",
+        'IND': 'India is the world\'s most populous nation and a rapidly growing major economy. Balancing development imperatives with climate commitments, India has expanded renewable energy while coal still dominates its power mix.',
+        'SAU': 'Saudi Arabia is the world\'s largest oil exporter and a key OPEC member. Under Vision 2030, the country is pursuing economic diversification and ambitious renewable energy targets.',
+        'WLD': 'Aggregated global data representing all countries. The world average per capita CO₂ is approximately 4.70 tonnes.'
+    };
+
+    const PHASES = [
+        { years: [2001, 2010], name: 'High Growth', description: 'GDP 6-7%, natural gas subsidies + industrial expansion', cagr: '+5.4%/yr', color: '#C65D3B', fillColor: 'rgba(205,92,92,0.15)' },
+        { years: [2011, 2015], name: 'Arab Spring Plateau', description: 'GDP fell to 1.8%, political instabilities, emissions plateau', cagr: '+0.6%/yr', color: '#C9A84C', fillColor: 'rgba(205,170,92,0.15)' },
+        { years: [2016, 2019], name: 'Reform & Zohr', description: 'Zohr gas field online, IMF reform, power sector expansion', cagr: '-1.5%/yr', color: '#5E8C61', fillColor: 'rgba(92,170,92,0.15)' },
+        { years: [2020, 2023], name: 'COVID Resilience', description: 'Egypt avoided recession, EGP crisis, rebound 2021-22', cagr: '+0.5%/yr', color: '#8B6B4F', fillColor: 'rgba(92,130,205,0.15)' },
+    ];
+
+    const TIER_CONFIG = {
+        peers: {
+            label: 'Developmental Peers',
+            desc: 'Similar income & development stage',
+            color: '#5E8C61',
+            question: 'Are similar economies emitting similarly?',
+        },
+        regional: {
+            label: 'Regional Context',
+            desc: 'Africa & Middle East peers',
+            color: '#4A7B6B',
+            question: 'Where does Egypt sit in its own region?',
+        },
+        responsibility: {
+            label: 'Climate Responsibility',
+            desc: 'High-income emitters',
+            color: '#C65D3B',
+            question: 'Who should be doing more?',
+        },
+    };
+
+    let currentTier = 'peers';
+    let sourceMode = 'co2'; // 'co2' or 'non-co2' for fuel mix charts
+
+    /* ── SOURCE MODE TOGGLE (Fuel Mix) ── */
+    function setSourceMode(mode) {
+        sourceMode = mode;
+        document.querySelectorAll('.source-toggle .toggle-btn').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.mode === mode);
+        });
+        loadSourcesChart();
+    }
+
+    document.querySelectorAll('.source-toggle .toggle-btn').forEach(btn => {
+        btn.addEventListener('click', () => setSourceMode(btn.dataset.mode));
+    });
+
+    const phaseConfig = {
+        high_growth: { name: 'High Growth', years: '2001-2010', cagr: '+5.4%', driver: 'GDP 6-7%, natural gas subsidies, industrial expansion' },
+        arab_spring: { name: 'Arab Spring Plateau', years: '2011-2015', cagr: '+0.6%', driver: 'GDP fell to 1.8%, political instability, emissions plateau' },
+        reform_zohr: { name: 'Reform & Zohr', years: '2016-2019', cagr: '-1.5%', driver: 'Zohr gas field online, IMF reform, power sector expansion' },
+        covid: { name: 'COVID Resilience', years: '2020-2023', cagr: '+0.5%', driver: 'Egypt avoided recession, EGP crisis, rebound 2021-22' }
+    };
+    const phaseKeys = ['high_growth', 'arab_spring', 'reform_zohr', 'covid'];
+    let selectedPhase = null;
+
+    /* ── CLOSE AI PANEL ── */
+    function closeAIPanel() {
+        document.getElementById('phaseAIPanel').style.display = 'none';
+        document.getElementById('phaseAiBtnWrap').style.display = 'none';
+        document.querySelectorAll('#emissionsPhaseCells .phase-cell').forEach(el => el.classList.remove('active'));
+        resetZoom();
+        selectedPhase = null;
+    }
+
+    /* ── PHASE CARD CLICK ── */
+    function onPhaseCardClick(idx) {
+        const ph = PHASES[idx];
+        const key = phaseKeys[idx];
+        const cells = document.querySelectorAll('#emissionsPhaseCells .phase-cell');
+        const active = cells[idx]?.classList.contains('active');
+
+        if (active) {
+            closeAIPanel();
+        } else {
+            ['totalEmissionsChart', 'perCapitaChart'].forEach(id => {
+                Plotly.relayout(id, { 'xaxis.range': [ph.years[0] - 0.3, ph.years[1] + 0.3] });
+            });
+            cells.forEach((el, i) => {
+                el.classList.toggle('active', i === idx);
+            });
+            document.getElementById('phaseAIPanel').style.display = 'none';
+            selectedPhase = { ...phaseConfig[key], idx };
+            const btn = document.getElementById('phaseAiBtn');
+            btn.textContent = `Generate AI Analysis for ${ph.name} (${ph.years[0]}–${ph.years[1]}) →`;
+            document.getElementById('phaseAiBtnWrap').style.display = 'flex';
+        }
+    }
+
+    /* ── PHASE AI ── */
+    async function loadPhaseAI() {
+        if (!selectedPhase) return;
+        const panel = document.getElementById('phaseAIPanel');
+        panel.style.display = 'block';
+        panel.innerHTML = `<div class="spinner-wrap" style="padding:2rem"><div class="spin"></div>Analyzing ${selectedPhase.name}…</div>`;
+
+        try {
+            const res = await fetch(`/api/ai/trend/${currentCountry}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    phase: selectedPhase.name,
+                    years: selectedPhase.years,
+                    cagr: selectedPhase.cagr,
+                    driver: selectedPhase.driver
+                })
+            });
+            const data = await res.json();
+            const phColor = PHASES[selectedPhase.idx]?.color || '#5E8C61';
+            panel.innerHTML = `
+            <div class="phase-ai-header" style="border-left:3px solid ${phColor};padding-left:1rem;margin-bottom:0.5rem">
+                <div style="display:flex;align-items:center;justify-content:space-between">
+                    <div style="display:flex;align-items:center;gap:0.5rem">
+                        <div class="ai-pulse" style="width:8px;height:8px;background:${phColor};border-radius:50%;animation:pulse 2s ease-in-out infinite"></div>
+                        <span style="font-family:'DM Mono',monospace;font-size:0.75rem;color:${phColor}">AI Analysis</span>
+                        <span style="font-family:'Outfit',sans-serif;font-size:0.9rem;font-weight:700;color:var(--text)">— ${selectedPhase.name} (${selectedPhase.years})</span>
+                    </div>
+                    <button onclick="closeAIPanel()" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:0.85rem;padding:0.25rem 0.5rem;border-radius:6px;transition:background 0.15s" onmouseover="this.style.background='var(--surface2)'" onmouseout="this.style.background='none'">× Close</button>
+                </div>
+            </div>
+            <div style="font-size:0.9rem;color:var(--text2);line-height:1.75;max-width:780px">${data.insight || data.error || 'No insight generated.'}</div>
+        `;
+        } catch (e) {
+            panel.innerHTML = `<div style="padding:1rem;color:var(--accent)">Error: ${e.message}</div>`;
+        }
+    }
+
+    const urlParams = new URLSearchParams(window.location.search);
+    currentCountry = urlParams.get('country') || '{{ default_country }}';
+
+    /* ── UTILS ── */
+    function fmt(n) {
+        if (!n && n !== 0) return '—';
+        if (n >= 1e9) return (n / 1e9).toFixed(2) + 'B';
+        if (n >= 1e6) return (n / 1e6).toFixed(2) + 'M';
+        if (n >= 1e3) return (n / 1e3).toFixed(1) + 'K';
+        return (+n).toFixed(1);
+    }
+
+    function animCount(el, target, decimals = 1, suffix = '') {
+        const start = 0, dur = 900;
+        const t0 = performance.now();
+        const tick = now => {
+            const p = Math.min((now - t0) / dur, 1);
+            const ease = 1 - Math.pow(1 - p, 3);
+            el.textContent = (start + (target - start) * ease).toFixed(decimals) + suffix;
+            if (p < 1) requestAnimationFrame(tick);
+        };
+        requestAnimationFrame(tick);
+    }
+
+    /* ── PHASE ZOOM ── */
+    function zoomToPhase(idx) {
+        const ph = PHASES[idx];
+        if (!ph) return;
+
+        const charts = ['totalEmissionsChart', 'perCapitaChart'];
+        const pad = 0.3;
+        const active = document.querySelectorAll('#emissionsPhaseCells .phase-cell')[idx]?.classList.contains('active');
+
+        if (active) {
+            resetZoom();
+        } else {
+            charts.forEach(id => {
+                Plotly.relayout(id, {
+                    'xaxis.range': [ph.years[0] - pad, ph.years[1] + pad]
+                });
+            });
+            document.querySelectorAll('#emissionsPhaseCells .phase-cell').forEach((el, i) => {
+                el.classList.toggle('active', i === idx);
+            });
+        }
+    }
+
+    function resetZoom() {
+        const years = window._chartYears || [];
+        const pcYrs = window._chartPcYears || [];
+        if (years.length) {
+            Plotly.relayout('totalEmissionsChart', {
+                'xaxis.range': [years[0] - 0.5, years[years.length - 1] + 0.5]
+            });
+        }
+        if (pcYrs.length) {
+            Plotly.relayout('perCapitaChart', {
+                'xaxis.range': [pcYrs[0] - 0.5, pcYrs[pcYrs.length - 1] + 0.5]
+            });
+        }
+        document.querySelectorAll('#emissionsPhaseCells .phase-cell').forEach(el => el.classList.remove('active'));
+    }
+
+    function setupChartReset() {
+        ['totalEmissionsChart', 'perCapitaChart'].forEach(id => {
+            document.getElementById(id).on('plotly_doubleclick', () => resetZoom());
+        });
+    }
+
+    /* ── SHARED PLOTLY CONFIG (defined here so always in scope) ── */
+    const PB = {
+        paper_bgcolor: 'rgba(0,0,0,0)',
+        plot_bgcolor: 'rgba(0,0,0,0)',
+        font: { family: 'Plus Jakarta Sans, sans-serif', color: '#7A6F5A', size: 11 },
+        margin: { t: 16, r: 16, b: 48, l: 56 },
+        xaxis: { gridcolor: 'rgba(44,36,22,0.06)', zerolinecolor: 'rgba(44,36,22,0.10)', linecolor: 'rgba(44,36,22,0.12)', tickfont: { color: '#7A6F5A' } },
+        yaxis: { gridcolor: 'rgba(44,36,22,0.06)', zerolinecolor: 'rgba(44,36,22,0.10)', linecolor: 'rgba(44,36,22,0.12)', tickfont: { color: '#7A6F5A' } },
+        hoverlabel: { bgcolor: '#FFFFFF', bordercolor: 'rgba(92,42,26,0.12)', font: { color: '#5C2A1A', size: 12 } }
+    };
+    const PC = { responsive: true, displayModeBar: false };
+
+    /* ── HELPER: clear spinner then render ── */
+    function plotInto(id, traces, layout, cfg) {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.innerHTML = '';          // ← kills the spinner, gives Plotly clean div
+        Plotly.newPlot(el, traces, { ...PB, ...layout }, cfg || PC);
+    }
+
+    function showChartError(id, msg) {
+        const el = document.getElementById(id);
+        if (el) el.innerHTML = `<div class="spinner-wrap" style="color:var(--accent);flex-direction:column;gap:0.5rem"><span style="font-size:1.2rem">⚠</span><span style="font-size:0.8rem">${msg}</span></div>`;
+    }
+
+    /* ── LOAD SUMMARY ── */
+    async function loadCountrySummary() {
+        try {
+            const res = await fetch(`/api/summary/${currentCountry}`);
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const d = await res.json();
+
+            const titleEl = document.getElementById('sectionCountryTitle');
+            if (titleEl) titleEl.textContent = d.country_name || currentCountry;
+            const nameBigEl = document.getElementById('countryNameBig');
+            if (nameBigEl) nameBigEl.textContent = d.country_name || currentCountry;
+            const isoBigEl = document.getElementById('countryIsoBig');
+            if (isoBigEl) isoBigEl.textContent = currentCountry;
+
+            const desc = countryDescriptions[currentCountry] || `${d.country_name || currentCountry} — emissions data from OWID.`;
+            const descEl = document.getElementById('countryDesc');
+            if (descEl) descEl.textContent = desc;
+
+            const co2 = +(d.co2_total || 0);
+            const pc = +(d.co2_per_capita || 0);
+            const sh = +(d.share_global_co2 || 0);
+            const gdp = +(d.gdp_per_capita || 0);
+            const wpc = +(d.global_co2_per_capita || 4.7);
+            const vsRaw = +(d.vs_global_per_capita || 0);
+            const vsPct = Math.abs(vsRaw) < 10 ? vsRaw * 100 : vsRaw;
+
+            const kpiGridEl = document.getElementById('kpiGrid');
+            if (kpiGridEl) kpiGridEl.innerHTML = `
+        <div class="kpi-card accent1">
+            <div class="kpi-icon" style="background:rgba(198,93,59,0.1)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#C65D3B" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/></svg>
+            </div>
+            <div class="kpi-label">Total CO₂ Emission</div>
+            <div class="kpi-value">${co2.toFixed(0)}<span class="kpi-unit">Mt</span></div>
+            <span class="kpi-delta ${co2 > 300 ? 'dn' : 'up'}">${co2 > 300 ? '▲ High emitter' : '▼ Below 300 Mt'}</span>
+        </div>
+        <div class="kpi-card accent2">
+            <div class="kpi-icon" style="background:rgba(94,140,97,0.1)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#5E8C61" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            </div>
+            <div class="kpi-label">Per Capita CO₂ Emission</div>
+            <div class="kpi-value">${pc.toFixed(2)}<span class="kpi-unit">t</span></div>
+            <span class="kpi-delta ${pc > wpc ? 'dn' : 'up'}">${pc > wpc ? '▲ above' : '▼ below'} world avg</span>
+        </div>
+        <div class="kpi-card accent3">
+            <div class="kpi-icon" style="background:rgba(201,168,76,0.1)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#C9A84C" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+            </div>
+            <div class="kpi-label">Global CO₂ Emission Share</div>
+            <div class="kpi-value">${sh.toFixed(2)}<span class="kpi-unit">%</span></div>
+            <span class="kpi-delta ${sh > 2 ? 'dn' : 'neu'}">${sh < 1 ? 'Low emitter' : sh < 3 ? 'Moderate' : 'Major emitter'}</span>
+        </div>
+        <div class="kpi-card accent4">
+            <div class="kpi-icon" style="background:rgba(74,123,107,0.1)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#4A7B6B" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+            </div>
+            <div class="kpi-label">GDP per Capita (2023)</div>
+            <div class="kpi-value">$${fmt(gdp)}</div>
+            <span class="kpi-delta neu">latest year</span>
+        </div>`;
+
+            /* Gauge ring animation */
+            const gaugeEl = document.getElementById('gaugeFill');
+            const circumference = 2 * Math.PI * 54;
+            const gaugeValEl = document.getElementById('gaugeVal');
+            if (gaugeValEl) gaugeValEl.textContent = pc.toFixed(2);
+            if (gaugeEl) {
+                const ratio = Math.min(pc / (wpc * 2), 1);
+                const offset = circumference * (1 - ratio);
+                gaugeEl.setAttribute('stroke-dasharray', circumference);
+                gaugeEl.setAttribute('stroke-dashoffset', circumference);
+                setTimeout(() => {
+                    gaugeEl.style.transition = 'stroke-dashoffset 1.4s cubic-bezier(0.4,0,0.2,1)';
+                    gaugeEl.style.strokeDashoffset = offset;
+                }, 400);
+            }
+
+            /* Animate Egypt context bar - scale against Saudi Arabia (18.4) */
+            const maxVal = 18.4;
+            const egyptPct = Math.round((pc / maxVal) * 100);
+            setTimeout(() => {
+                const egyptBar = document.getElementById('egyptCtxBar');
+                const egyptVal = document.getElementById('egyptCtxVal');
+                if (egyptBar) egyptBar.style.width = egyptPct + '%';
+                if (egyptVal) egyptVal.textContent = pc.toFixed(2);
+
+                /* Update insight text dynamically */
+                const usaVal = 14.9;
+                const ratio = (usaVal / pc).toFixed(1);
+                const insightEl = document.querySelector('.context-insight');
+                if (insightEl) insightEl.innerHTML = `Egypt emits <strong>${ratio}× less</strong> CO₂ per capita than the USA`;
+            }, 500);
+
+            /* Quick stats */
+            const quickStatsEl = document.getElementById('quickStats');
+            const vsLabel = vsPct > 0 ? 'higher' : 'less';
+            const vsText = vsPct ? Math.abs(vsPct).toFixed(0) + '% ' + vsLabel : '—';
+            if (quickStatsEl) quickStatsEl.innerHTML = `
+        <div class="qs"><div class="qs-label">Population</div><div class="qs-val">${fmt(d.population)}</div></div>
+        <div class="qs"><div class="qs-label">vs Global Average</div><div class="qs-val">${vsText}</div></div>
+        <div class="qs"><div class="qs-label">Cumulative CO₂ (2001–2023)</div><div class="qs-val">${d.co2_cumulative ? fmt(d.co2_cumulative) + ' Mt' : '—'}</div></div>
+        <div class="qs"><div class="qs-label">Data span</div><div class="qs-val">2001–2023</div></div>`;
+
+        } catch (e) {
+            console.error('Summary error:', e);
+            const kpiGridEl = document.getElementById('kpiGrid');
+            if (kpiGridEl) kpiGridEl.innerHTML = `<div style="grid-column:1/-1;color:var(--accent);font-size:0.85rem;padding:1rem">Failed to load summary: ${e.message}</div>`;
+        }
+    }
+
+    /* ── EMISSIONS CHARTS ── */
+    async function loadEmissionsCharts() {
+        try {
+            const res = await fetch(`/api/trend/${currentCountry}`);
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const d = await res.json();
+            console.log('API /api/trend response:', JSON.stringify(d, null, 2));
+
+            const tot = d.total || {};
+            const pcc = d.per_capita || {};
+
+            const years = tot.years || [];
+            const values = tot.values || [];
+            const pcYrs = pcc.years || [];
+            const pcVals = pcc.values || [];
+
+            console.log('pcVals sample:', pcVals.slice(0, 5), 'max:', Math.max(...pcVals));
+
+            if (!years.length) throw new Error('No trend data returned from API');
+
+            window._chartYears = years;
+            window._chartPcYears = pcYrs;
+
+            const yMax = Math.max(...values) * 1.15;
+            const pcYMax = Math.max(...pcVals) * 1.15;
+
+            /* ── Build phaseMap for hover ── */
+            const phaseMap = {};
+            PHASES.forEach(ph => {
+                for (let y = ph.years[0]; y <= ph.years[1]; y++) phaseMap[y] = ph.name;
+            });
+
+            /* ── Phase area fills (clipped to data line, no gap between phases) ── */
+            function buildPhaseTraces(yrs, vals) {
+                const traces = [];
+                PHASES.forEach((ph, i) => {
+                    const nextPh = PHASES[i + 1];
+                    const endYear = nextPh ? nextPh.years[0] : ph.years[1];
+                    const segYrs = yrs.filter(y => y >= ph.years[0] && y <= endYear);
+                    const segVals = segYrs.map(y => vals[yrs.indexOf(y)]);
+                    if (!segYrs.length) return;
+                    traces.push({
+                        x: segYrs, y: segVals,
+                        type: 'scatter', mode: 'none',
+                        fill: 'tozeroy',
+                        fillcolor: ph.fillColor,
+                        line: { color: 'transparent', width: 0 },
+                        hoverinfo: 'skip',
+                        showlegend: false
+                    });
+                });
+                return traces;
+            }
+
+            const phaseFillTraces = buildPhaseTraces(years, values);
+            const pcPhaseFillTraces = buildPhaseTraces(pcYrs, pcVals);
+
+            /* ── Phase name label annotations (above plot, paper-relative) ── */
+            function phaseAnnotations() {
+                return PHASES.map(ph => ({
+                    x: (ph.years[0] + ph.years[1]) / 2,
+                    y: 1.0,
+                    xref: 'x', yref: 'paper',
+                    text: ph.name,
+                    showarrow: false,
+                    font: { color: ph.color, size: 10, family: 'DM Sans, sans-serif' },
+                    align: 'center',
+                    xanchor: 'center',
+                    yanchor: 'bottom'
+                }));
+            }
+
+            const totalAnnotations = phaseAnnotations();
+            const pcAnnotations = phaseAnnotations();
+
+            /* ── TOTAL CO2 CHART ── */
+            const totalMainTrace = {
+                x: years, y: values,
+                customdata: years.map(y => phaseMap[y] || ''),
+                type: 'scatter', mode: 'lines+markers',
+                fill: 'tozeroy',
+                fillcolor: 'rgba(198,93,59,0.06)',
+                line: { color: '#C65D3B', width: 2, shape: 'spline' },
+                marker: { size: 5, opacity: 0.7, color: '#C65D3B' },
+                hovertemplate: '<b>%{x}</b><br>%{y:.1f} Mt CO₂<br><i>Phase: %{customdata}</i><extra></extra>',
+                showlegend: false
+            };
+
+            plotInto('totalEmissionsChart', [...phaseFillTraces, totalMainTrace], {
+                annotations: totalAnnotations,
+                margin: { t: 40, r: 16, b: 48, l: 56 },
+                xaxis: { ...PB.xaxis, title: '' },
+                yaxis: { ...PB.yaxis, title: 'Mt CO₂', range: [100, yMax] }
+            });
+
+            /* ── PER CAPITA CHART ── */
+            const pcMainTrace = {
+                x: pcYrs, y: pcVals,
+                customdata: pcYrs.map(y => phaseMap[y] || ''),
+                type: 'scatter', mode: 'lines+markers',
+                fill: 'tozeroy',
+                fillcolor: 'rgba(201,168,76,0.07)',
+                line: { color: '#C9A84C', width: 2, shape: 'spline' },
+                marker: { size: 5, opacity: 0.7, color: '#C9A84C' },
+                hovertemplate: '<b>%{x}</b><br>%{y:.2f} t/person<br><i>Phase: %{customdata}</i><extra></extra>',
+                showlegend: false
+            };
+
+            plotInto('perCapitaChart', [...pcPhaseFillTraces, pcMainTrace], {
+                annotations: pcAnnotations,
+                margin: { t: 40, r: 16, b: 48, l: 56 },
+                xaxis: { ...PB.xaxis, title: '' },
+                yaxis: { ...PB.yaxis, title: 't CO₂ / person', range: [0, pcYMax] }
+            });
+
+            /* ── Phase cells ── */
+            const phaseCellsEl = document.getElementById('emissionsPhaseCells');
+            if (phaseCellsEl) {
+                phaseCellsEl.innerHTML = PHASES.map((ph, i) =>
+                    `<div class="phase-cell" id="phase-cell-${i}" style="--phase-color:${ph.color}" onclick="onPhaseCardClick(${i})">
+                    <div class="phase-period">${ph.years[0]} – ${ph.years[1]}</div>
+                    <div class="phase-name">${ph.name}</div>
+                    <div class="phase-driver">${ph.description}</div>
+                    <span class="cagr-pill">CAGR ${ph.cagr}</span>
+                </div>`
+                ).join('');
+            }
+
+        } catch (e) {
+            console.error('Emissions chart error:', e);
+            showChartError('totalEmissionsChart', e.message);
+            showChartError('perCapitaChart', e.message);
+        }
+    }
+
+    /* ── COMPARISON CHARTS ── */
+    async function loadComparisonCharts(tier) {
+        try {
+            const year = document.getElementById('compYear')?.value || 2023;
+            const url = `/api/comparison/${currentCountry}?tier=${tier}&year=${year}`;
+            const res = await fetch(url);
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const d = await res.json();
+
+            const countries = d.countries || [];
+            if (!countries.length) throw new Error('No comparison data');
+
+            const egyptColor = '#5E8C61';
+            const maroonGradient = ['#8B5A4A', '#9E6B5B', '#B07B6B', '#C28B7B', '#D49B8B'];
+            const getBarColor = (name, index) => name === 'Egypt' ? egyptColor : maroonGradient[index % maroonGradient.length];
+            const getScatterColor = (name) => name === 'Egypt' ? egyptColor : 'rgba(139,90,74,0.6)';
+
+            const compCountries = countries.filter(c => c.co2_per_capita != null && !(c.code in { Africa: true, 'Middle East': true }));
+            compCountries.sort((a, b) => b.co2_per_capita - a.co2_per_capita);
+
+            plotInto('comparisonChart', [{
+                x: compCountries.map(c => c.name),
+                y: compCountries.map(c => c.co2_per_capita),
+                type: 'bar',
+                marker: { color: compCountries.map((c, i) => getBarColor(c.name, i)) },
+                hovertemplate: '<b>%{x}</b><br>%{y:.2f} t CO₂/person<extra></extra>'
+            }], {
+                bargap: 0.35,
+                yaxis: { ...PB.yaxis, title: 't CO₂ / person' },
+                shapes: [{
+                    type: 'line', y0: 4.71, y1: 4.71, x0: 0, x1: 1,
+                    xref: 'paper', yref: 'y',
+                    line: { color: 'gray', width: 1.5, dash: 'dash' }
+                }],
+                annotations: [{
+                    x: 1, y: 4.85, xref: 'paper', yref: 'y',
+                    text: 'World avg: 4.71t', showarrow: false,
+                    font: { size: 10, color: '#666', style: 'italic' },
+                    xanchor: 'right', yanchor: 'bottom'
+                }]
+            });
+
+            const scatterCountries = countries.filter(c => c.gdp != null && c.co2_per_capita != null);
+
+            const sizes = scatterCountries.map(c => {
+                const pop = c.population || 0;
+                if (!pop) return 12;
+                const size = Math.sqrt(pop) / 1000;
+                return Math.max(14, Math.min(80, size));
+            });
+
+            plotInto('scatterChart', [{
+                x: scatterCountries.map(c => (c.gdp || 0) / 1e9),
+                y: scatterCountries.map(c => c.co2_per_capita),
+                mode: 'markers+text',
+                type: 'scatter',
+                text: scatterCountries.map(c => c.name),
+                textposition: 'top center',
+                textfont: { color: '#8B92A8', size: 10 },
+                marker: {
+                    size: sizes,
+                    color: scatterCountries.map(c => getScatterColor(c.name)),
+                    line: { width: 1, color: 'rgba(255,255,255,0.5)' }
+                },
+                hovertemplate: '<b>%{text}</b><br>GDP: $%{x:,.2f}B<br>CO₂: %{y:.2f} t/capita<br>Population: %{marker.size:.1f}M<extra></extra>'
+            }], {
+                margin: { t: 50, r: 16, b: 48, l: 56 },
+                xaxis: {
+                    ...PB.xaxis,
+                    title: `GDP (Billion USD) — ${d.year}`,
+                    tickprefix: '$',
+                    tickformat: ',.2f',
+                    tickfont: { color: '#7A6F5A' }
+                },
+                yaxis: {
+                    ...PB.yaxis,
+                    title: `t CO₂ / person — ${d.year}`,
+                    tickfont: { color: '#7A6F5A' }
+                },
+                annotations: [{
+                    x: 1, y: 1, xref: 'paper', yref: 'paper',
+                    text: 'Bubble size = population', showarrow: false,
+                    font: { size: 10, color: '#666', style: 'italic' },
+                    xanchor: 'right', yanchor: 'bottom'
+                }]
+            });
+
+            const hdiCountries = countries.filter(c => c.hdi_adjusted != null);
+            if (hdiCountries.length) {
+                hdiCountries.sort((a, b) => b.hdi_adjusted - a.hdi_adjusted);
+                plotInto('hdiChart', [{
+                    x: hdiCountries.map(c => c.name),
+                    y: hdiCountries.map(c => c.hdi_adjusted),
+                    type: 'bar',
+                    marker: { color: hdiCountries.map((c, i) => getBarColor(c.name, i)) },
+                    text: hdiCountries.map(c => (c.co2_per_capita / c.hdi).toFixed(2)),
+                    customdata: hdiCountries.map(c => c.hdi),
+                    hovertemplate: '<b>%{x}</b><br>HDI: %{customdata:.3f}<br>%{y:.2f} t/HDI<extra></extra>'
+                }], {
+                    bargap: 0.35,
+                    yaxis: { ...PB.yaxis, title: 't CO₂ per capita / HDI score' }
+                });
+            } else {
+                showChartError('hdiChart', 'HDI data unavailable');
+            }
+
+            const intensityData = countries.filter(c => c.carbon_intensity != null);
+            if (intensityData.length) {
+                intensityData.sort((a, b) => b.carbon_intensity - a.carbon_intensity);
+                plotInto('intensityChart', [{
+                    x: intensityData.map(c => c.name),
+                    y: intensityData.map(c => c.carbon_intensity),
+                    type: 'bar',
+                    marker: { color: intensityData.map((c, i) => getBarColor(c.name, i)) },
+                    hovertemplate: '<b>%{x}</b><br>%{y:.2f} t CO₂ / million USD<extra></extra>'
+                }], {
+                    bargap: 0.35,
+                    yaxis: { ...PB.yaxis, title: 't CO₂ / million USD' }
+                });
+            } else {
+                showChartError('intensityChart', 'Carbon intensity unavailable');
+            }
+
+        } catch (e) {
+            console.error('Comparison chart error:', e);
+            ['comparisonChart', 'scatterChart', 'hdiChart', 'intensityChart'].forEach(id => showChartError(id, e.message));
+        }
+    }
+
+    /* ── TIER FILTER ── */
+    function renderTierCells() {
+        const el = document.getElementById('tierCells');
+        if (!el) return;
+        const tiers = ['peers', 'regional', 'responsibility'];
+        el.innerHTML = tiers.map(t => {
+            const cfg = TIER_CONFIG[t];
+            const active = t === currentTier ? 'active' : '';
+            return `<div class="tier-cell ${active}" style="--tier-color:${cfg.color}" onclick="switchTier('${t}')">
+            <div class="tier-eyebrow">Tier ${tiers.indexOf(t) + 1}</div>
+            <div class="tier-name">${cfg.label}</div>
+            <div class="tier-desc">${cfg.desc}</div>
+        </div>`;
+        }).join('');
+    }
+
+    function switchTier(tier) {
+        if (tier === currentTier) return;
+        currentTier = tier;
+        renderTierCells();
+        loadComparisonCharts(tier);
+    }
+
+    /* ── AI INSIGHT ── */
+    function aiBox(msg) {
+        return `<div class="ai-box">
+        <div class="ai-box-head"><div class="ai-pulse"></div><span class="ai-box-title">AI Analysis</span></div>
+        <div class="ai-box-body"><div class="spinner-wrap" style="padding:0.5rem 0"><div class="spin"></div>${msg}</div></div>
+    </div>`;
+    }
+
+    function aiBoxResult(text) {
+        return `<div class="ai-box">
+        <div class="ai-box-head">
+            <div style="display:flex;align-items:center;gap:0.5rem">
+                <div class="ai-pulse"></div>
+                <span class="ai-box-title">AI Analysis</span>
+            </div>
+            <button onclick="this.closest('.ai-box').remove()" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:0.85rem;padding:0.25rem 0.5rem;border-radius:6px;transition:background 0.15s" onmouseover="this.style.background='var(--surface2)'" onmouseout="this.style.background='none'">× Close</button>
+        </div>
+        <div class="ai-box-body">${text}</div>
+    </div>`;
+    }
+
+    async function loadAIInsight(type) {
+        const map = {
+            overview: { el: 'overviewAIInsight', url: `/api/ai/trend/${currentCountry}`, key: 'insight', msg: 'Generating country overview…' },
+            trend: { el: 'trendAIInsight', url: `/api/ai/trend/${currentCountry}`, key: 'insight', msg: 'Analysing emission trends…' },
+            comparison: { el: 'comparisonAIInsight', url: `/api/ai/comparison/${currentCountry}?tier=${currentTier}`, key: 'insight', msg: 'Comparing with global data…' },
+            sources: { el: 'sourcesAIInsight', url: `/api/ai/sources/${currentCountry}?mode=${sourceMode}`, key: 'insight', msg: 'Analysing fuel mix…' }
+        };
+        const m = map[type];
+        if (!m) return;
+        const el = document.getElementById(m.el);
+        if (!el) return;
+        el.innerHTML = aiBox(m.msg);
+        
+        // Ensure user sees the AI box immediately
+        setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 50);
+        try {
+            const res = await fetch(m.url);
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const data = await res.json();
+            el.innerHTML = aiBoxResult(data[m.key] || data.error || 'Analysis complete.');
+        } catch (e) {
+            el.innerHTML = aiBoxResult(`<span style="color:var(--accent)">Error: ${e.message}</span>`);
+        }
+    }
+
+    /* ── SOURCES CHARTS ── */
+    async function loadSourcesChart() {
+        try {
+            const res = await fetch(`/api/emission-sources/${currentCountry}`);
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const d = await res.json();
+
+            /* Donut Chart */
+            const nonCo2Color = '#9B59B6';
+
+            let donutData, donutLabels, donutValues, donutColors, donutHole, donutTitle, donutUnit, colors;
+
+            if (sourceMode === 'non-co2') {
+                const srcColorsNonCo2 = { Gas: '#FF6B6B', Oil: '#F4A460', Coal: '#8B8682', Cement: '#4ECDC4', Flaring: '#E74C3C' };
+                colors = srcColorsNonCo2;
+                const co2Sources = ['coal_co2', 'oil_co2', 'gas_co2', 'cement_co2', 'flaring_co2'];
+                const co2Sum = co2Sources.reduce((sum, k) => sum + (+(d[k]) || 0), 0);
+                const totalGhg = +(d.total_ghg_excluding_lucf) || 0;
+                const nonCo2Gases = Math.max(0, totalGhg - co2Sum);
+
+                const sources = [
+                    { label: 'Gas', val: +(d.gas_co2) || 0, color: srcColorsNonCo2['Gas'] },
+                    { label: 'Oil', val: +(d.oil_co2) || 0, color: srcColorsNonCo2['Oil'] },
+                    { label: 'Coal', val: +(d.coal_co2) || 0, color: srcColorsNonCo2['Coal'] },
+                    { label: 'Cement', val: +(d.cement_co2) || 0, color: srcColorsNonCo2['Cement'] },
+                    { label: 'Flaring', val: +(d.flaring_co2) || 0, color: srcColorsNonCo2['Flaring'] },
+                    { label: 'Non-CO₂ (CH₄, N₂O)', val: nonCo2Gases, color: nonCo2Color }
+                ].filter(s => s.val > 0);
+
+                donutLabels = sources.map(s => s.label);
+                donutValues = sources.map(s => s.val);
+                donutColors = sources.map(s => s.color);
+                donutHole = 0.55;
+                donutTitle = 'GHG by Source';
+                donutUnit = 'Mt CO2e';
+            } else {
+                const srcColors = { Gas: '#C65D3B', Oil: '#8B6B4F', Coal: '#A89E8C', Cement: '#C9A84C', Flaring: '#5E8C61' };
+                colors = srcColors;
+                const sources = [
+                    { label: 'Gas', val: +(d.gas_co2) || 0 },
+                    { label: 'Oil', val: +(d.oil_co2) || 0 },
+                    { label: 'Coal', val: +(d.coal_co2) || 0 },
+                    { label: 'Cement', val: +(d.cement_co2) || 0 },
+                    { label: 'Flaring', val: +(d.flaring_co2) || 0 }
+                ].filter(s => s.val > 0);
+
+                donutLabels = sources.map(s => s.label);
+                donutValues = sources.map(s => s.val);
+                donutColors = sources.map(s => srcColors[s.label] || '#888');
+                donutHole = 0.55;
+                donutTitle = 'CO2 by Source';
+                donutUnit = 'Mt CO2';
+            }
+
+            plotInto('sourcesChart', [{
+                labels: donutLabels,
+                values: donutValues,
+                type: 'pie',
+                hole: donutHole,
+                marker: { colors: donutColors },
+                textfont: { color: '#E8EBF5', size: 11 },
+                hovertemplate: `<b>%{label}</b><br>%{value:.1f} ${donutUnit} (%{percent})<extra></extra>`
+            }], {
+                margin: { t: 16, r: 16, b: 48, l: 16 },
+                legend: { orientation: 'h', y: -0.2, font: { color: '#8B92A8' } },
+                showlegend: true
+            });
+
+            // Update card titles based on mode
+            const chartTitle = document.getElementById('sourcesChartTitle');
+            const timeTitle = document.getElementById('sourcesTimeChartTitle');
+            const timeBadge = document.getElementById('sourcesTimeChartBadge');
+            if (chartTitle) chartTitle.textContent = sourceMode === 'non-co2' ? 'GHG by Source' : 'CO₂ by Source';
+            if (timeTitle) timeTitle.textContent = sourceMode === 'non-co2' ? 'GHG Over Time' : 'Sources Over Time';
+            if (timeBadge) timeBadge.textContent = sourceMode === 'non-co2' ? 'Mt CO₂e' : 'Mt CO₂';
+
+            /* Stacked area over time */
+            try {
+                const tRes = await fetch(`/api/trend/${currentCountry}`);
+                const td = await tRes.json();
+                const years = (td.total || {}).years || [];
+                const vals = (td.total || {}).values || [];
+
+                if (years.length) {
+                    const unitLabel = sourceMode === 'non-co2' ? 'Mt CO2e' : 'Mt CO₂';
+                    let traces = [];
+
+                    if (sourceMode === 'non-co2') {
+                        const srcColorsNonCo2 = { Gas: '#FF6B6B', Oil: '#F4A460', Coal: '#8B8682', Cement: '#4ECDC4', Flaring: '#E74C3C' };
+                        const co2Sources = ['coal_co2', 'oil_co2', 'gas_co2', 'cement_co2', 'flaring_co2'];
+                        const co2Sum = +((d.coal_co2 || 0) + (d.oil_co2 || 0) + (d.gas_co2 || 0) + (d.cement_co2 || 0) + (d.flaring_co2 || 0));
+                        const totalGhg = +(d.total_ghg_excluding_lucf) || 0;
+                        const nonCo2Ratio = co2Sum > 0 ? (totalGhg - co2Sum) / co2Sum : 0;
+
+                        // CO2 sources
+                        const srcColorMap = {
+                            'coal_co2': srcColorsNonCo2['Coal'],
+                            'oil_co2': srcColorsNonCo2['Oil'],
+                            'gas_co2': srcColorsNonCo2['Gas'],
+                            'cement_co2': srcColorsNonCo2['Cement'],
+                            'flaring_co2': srcColorsNonCo2['Flaring']
+                        };
+                        const co2Traces = co2Sources.map(k => ({
+                            x: years,
+                            y: vals.map(v => {
+                                const ratio = {
+                                    'coal_co2': d.coal_co2, 'oil_co2': d.oil_co2, 'gas_co2': d.gas_co2,
+                                    'cement_co2': d.cement_co2, 'flaring_co2': d.flaring_co2
+                                }[k] / co2Sum;
+                                return +(v * ratio).toFixed(2);
+                            }),
+                            name: k.replace('_co2', ''),
+                            stackgroup: 'one',
+                            fillcolor: srcColorMap[k] ? srcColorMap[k] + '88' : '#88888888',
+                            line: { color: srcColorMap[k] || '#888', width: 0 },
+                            hovertemplate: `<b>${k.replace('_co2', '')}</b><br>%{y:.1f} ${unitLabel}<extra></extra>`
+                        }));
+                        traces = [...co2Traces];
+
+                        // Non-CO2 layer
+                        traces.push({
+                            x: years,
+                            y: vals.map(v => +(v * nonCo2Ratio).toFixed(2)),
+                            name: 'Non-CO₂ (CH₄, N₂O)',
+                            stackgroup: 'one',
+                            fillcolor: nonCo2Color + '88',
+                            line: { color: nonCo2Color, width: 0 },
+                            hovertemplate: `<b>Non-CO2</b><br>%{y:.1f} ${unitLabel}<extra></extra>`
+                        });
+
+                        // LULUCF line overlay (hide if data is zero)
+                        const lucDataRes = await fetch(`/api/emission-sources/${currentCountry}`);
+                        const lucData = await lucDataRes.json();
+                        const lucVal = +(lucData.land_use_change_co2) || 0;
+                        if (Math.abs(lucVal) > 0.01) {
+                            const totalCo2Val = +(d.total_co2) || 1;
+                            traces.push({
+                                x: years,
+                                y: vals.map(v => +(v * (lucVal / totalCo2Val)).toFixed(2)),
+                                name: 'LULUCF',
+                                type: 'scatter',
+                                mode: 'lines',
+                                line: { color: '#27AE60', dash: 'dash', width: 2 },
+                                hovertemplate: `<b>LULUCF</b><br>%{y:.2f} ${unitLabel}<extra></extra>`
+                            });
+                        }
+                    } else {
+                        const srcColors = { Gas: '#C65D3B', Oil: '#8B6B4F', Coal: '#A89E8C', Cement: '#C9A84C', Flaring: '#5E8C61' };
+                        const total = +(d.total_co2) || 0;
+                        if (total) {
+                            const sources = [
+                                { label: 'Gas', val: +(d.gas_co2) || 0 },
+                                { label: 'Oil', val: +(d.oil_co2) || 0 },
+                                { label: 'Coal', val: +(d.coal_co2) || 0 },
+                                { label: 'Cement', val: +(d.cement_co2) || 0 },
+                                { label: 'Flaring', val: +(d.flaring_co2) || 0 }
+                            ].filter(s => s.val > 0);
+
+                            traces = sources.map(s => ({
+                                x: years,
+                                y: vals.map(v => +(v * (s.val / total)).toFixed(2)),
+                                name: s.label,
+                                stackgroup: 'one',
+                                fillcolor: srcColors[s.label] ? srcColors[s.label] + '88' : '#88888888',
+                                line: { color: srcColors[s.label] || '#888', width: 0 },
+                                hovertemplate: `<b>${s.label}</b><br>%{y:.1f} ${unitLabel}<extra></extra>`
+                            }));
+                        }
+                    }
+
+                    plotInto('sourcesTimeChart', traces, {
+                        legend: { orientation: 'h', y: -0.25, font: { color: '#8B92A8' } },
+                        showlegend: true,
+                        yaxis: { ...PB.yaxis, title: unitLabel }
+                    });
+                } else {
+                    showChartError('sourcesTimeChart', 'Time series not available');
+                }
+            } catch (_) {
+                showChartError('sourcesTimeChart', 'Time series not available');
+            }
+
+            /* Footnote for Non-CO2 mode */
+            const footnote = document.getElementById('sourcesFootnote');
+            if (footnote) {
+                footnote.style.display = sourceMode === 'non-co2' ? 'block' : 'none';
+            }
+
+        } catch (e) {
+            console.error('Sources chart error:', e);
+            showChartError('sourcesChart', e.message);
+            showChartError('sourcesTimeChart', e.message);
+        }
+    }
+
+    /* ── CLIMATE REFLECTION ── */
+    function generateClimateReflection() {
+        const cta = document.getElementById('reflectionCTA');
+        const box = document.getElementById('climateReflection');
+
+        cta.style.display = 'none';
+        box.style.display = 'block';
+        box.innerHTML = `<div class="ai-box">
+        <div class="ai-box-head"><div class="ai-pulse"></div><span class="ai-box-title">AI Analysis</span></div>
+        <div class="ai-box-body"><div class="spinner-wrap" style="padding:0.5rem 0"><div class="spin"></div>Generating climate reflection…</div></div>
+    </div>`;
+
+        fetch(`/api/ai/reflection/${currentCountry}`)
+            .then(r => r.ok ? r.json() : Promise.reject(`HTTP ${r.status}`))
+            .then(data => {
+                box.innerHTML = `<div class="ai-box">
+                <div class="ai-box-head"><div class="ai-pulse"></div><span class="ai-box-title">AI Analysis</span></div>
+                <div class="ai-box-body">${data.reflection || 'No reflection generated.'}</div>
+            </div>`;
+            })
+            .catch(e => {
+                box.innerHTML = `<div class="ai-box">
+                <div class="ai-box-head"><div class="ai-pulse"></div><span class="ai-box-title">AI Analysis</span></div>
+                <div class="ai-box-body"><span style="color:var(--accent)">Error: ${e}</span></div>
+            </div>`;
+            });
+    }
+
+    /* ── INIT ── */
+    document.addEventListener('DOMContentLoaded', () => {
+        if (window._plotlyReady) {
+            initCharts();
+        } else {
+            window._plotlyInit = initCharts;
+        }
+    });
+
+    function initCharts() {
+        renderTierCells();
+        initComparisonYearDropdown();
+        loadCountrySummary();
+        setTimeout(loadEmissionsCharts, 100);
+        setTimeout(() => loadComparisonCharts(currentTier), 200);
+        setTimeout(loadSourcesChart, 300);
+        setTimeout(setupChartReset, 500);
+    }
+
+    function initComparisonYearDropdown() {
+        const select = document.getElementById('compYear');
+        if (!select) return;
+        const years = [];
+        for (let y = 2023; y >= 2001; y--) years.push(y);
+        select.innerHTML = years.map(y =>
+            `<option value="${y}" ${y === 2023 ? 'selected' : ''}>${y}</option>`
+        ).join('');
+    }
+</script>
+{% endblock %}
