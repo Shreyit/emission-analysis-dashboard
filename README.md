@@ -9,6 +9,7 @@
 </p>
 
 <p align="center">
+  <a href="https://emission-analysis-dashboard.vercel.app/"><strong>🚀 Live Demo</strong></a> •
   <a href="https://github.com/owid/co2-data">Data Source: Our World in Data</a> •
   <a href="https://github.com/openrouter/openrouter-api">AI: OpenRouter</a> •
   <a href="https://plotly.com/javascript/">Visualizations: Plotly.js</a>
@@ -247,6 +248,16 @@ OPENROUTER_API_KEY=your_api_key_here
 FLASK_ENV=development
 FLASK_DEBUG=1
 ```
+
+### Deploying to Vercel
+
+This application is ready to be deployed to Vercel out of the box (configured via `vercel.json` and `app.py`).
+
+1. Push your repository to GitHub.
+2. Log into [Vercel](https://vercel.com) and click **Add New Project**.
+3. Import your GitHub repository.
+4. Add your `OPENROUTER_API_KEY` to the **Environment Variables** section.
+5. Click **Deploy**.
 
 ---
 
