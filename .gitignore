@@ -144,7 +144,7 @@ cython_debug/
 # ═══════════════════════════════════════════════════════════════════
 
 # Large data files (keep .gitkeep to preserve directory structure)
-data/cache/*.csv
+# data/cache/*.csv (Temporarily disabled to allow pushing OWID dataset to Vercel)
 data/cache/*.parquet
 data/cache/*.pkl
 
