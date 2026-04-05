@@ -106,25 +106,19 @@ Quick reference metrics showing:
 flowchart TD
     subgraph Backend [Flask Backend]
         direction LR
-        A[app.py<br>Routes]
-        B[data_utils.py<br>Data Logic]
-        C[ai_service.py<br>OpenRouter API]
+        A[app.py<br>Routes] ~~~ B[data_utils.py<br>Data Logic] ~~~ C[ai_service.py<br>OpenRouter API]
     end
 
     D[(OWID Data<br>owid_emissions.csv)]
 
     subgraph Templates [Jinja2 Templates]
         direction LR
-        E[base.html<br>Layout & CSS]
-        F[index.html<br>Dashboard UI]
+        E[base.html<br>Layout & CSS] ~~~ F[index.html<br>Dashboard UI]
     end
 
     subgraph Frontend [Plotly Frontend]
         direction LR
-        G(Line Charts)
-        H(Donut Chart)
-        I(Bar Charts)
-        J(Scatter Plot)
+        G(Line Charts) ~~~ H(Donut Chart) ~~~ I(Bar Charts) ~~~ J(Scatter Plot)
     end
 
     Backend --> D
