@@ -57,12 +57,14 @@ Interactive line charts showing Egypt's CO₂ emissions from 2001-2023 with:
 | 2016-2019 | Reform & Zohr | **-1.5%/yr** | Zohr gas online, IMF reform |
 | 2020-2023 | COVID & Recovery | +0.5%/yr | Pandemic, global recovery |
 
-### 2. Fuel Mix Breakdown (CO₂/GHG Toggle)
+### 2. Fuel Mix Breakdown (CO₂/GHG Toggle) with Historical Timeline
 
 Explore emissions by source with a toggle between:
 
 - **CO₂ Mode**: Coal, Oil, Gas, Cement, Flaring
 - **GHG Mode**: Full greenhouse gas breakdown including methane (CH₄), nitrous oxide (N₂O)
+
+**Interactive Timeline Animation**: Features an integrated scrubber and playback ▶ controls allowing you to see the exact Donut Chart distribution for any year. As the Donut chart animates, a sweeping timeline synchronizes across the Stacked Area historical series (2001-2023) to show how fuel reliance evolved over two decades!
 
 **Key Insight:** The Zohr gas field (discovered 2015, online 2017) led to Egypt becoming a net gas exporter by 2019 — explaining the emissions decline during 2016-2019.
 
@@ -77,10 +79,10 @@ Compare Egypt's performance against different country groups across **2001-2023*
 | **Responsibility** | USA, China, Germany, World | Historical emitters |
 
 **Four Comparison Charts:**
-1. **Per Capita Bar** — Sorted descending with world average reference line
-2. **GDP vs CO₂ Scatter** — Bubble size shows population
-3. **HDI-Adjusted Emissions** — CO₂ per capita / HDI score (lower = more efficient)
-4. **Carbon Intensity** — CO₂ per million USD GDP
+1. **Per Capita Bar** — Sorted descending with world average reference line and dynamic gradient shading
+2. **GDP vs CO₂ Scatter** — Advanced linear scaling with area-proportional population bubbles (sizeref scaling)
+3. **HDI-Adjusted Emissions** — CO₂ per capita / HDI score (live HDI data from UNDP Data API)
+4. **Carbon Intensity** — CO₂ per million USD GDP (using nominal US$ from World Bank API)
 
 ### 4. AI-Powered Insights
 
@@ -131,8 +133,9 @@ flowchart TD
 | Component | Technology | Purpose |
 |-----------|------------|---------|
 | **Backend** | Python Flask | API endpoints, data processing |
-| **Data** | Pandas, OWID CSV | Emissions data |
-| **Frontend** | HTML/CSS/JavaScript | Dashboard UI |
+| **Data (Primary)** | Pandas, OWID CSV | Core emissions metrics |
+| **Data (External API)** | `requests` module | Dynamic HDI (UNDP HDR API) & Nominal GDP (World Bank API) |
+| **Frontend** | HTML/CSS/JavaScript | Dashboard UI, Animation loops |
 | **Charts** | Plotly.js | Interactive visualizations |
 | **AI** | OpenRouter API | Natural language insights |
 | **Dev Assistant** | Opencode Big Pickle | HTML/CSS/JS implementation |
@@ -228,6 +231,9 @@ Create a `.env` file:
 # Get free key at: https://openrouter.ai/
 OPENROUTER_API_KEY=your_api_key_here
 
+# UNDP HDR API Key (required for dynamic HDI metric charts)
+HDR_API_KEY=HDR-68M2Tq4FVFxNBTfVHszAALekyuaFxQ4u
+
 # Optional: Flask configuration
 FLASK_ENV=development
 FLASK_DEBUG=1
@@ -255,12 +261,12 @@ This application is ready to be deployed to Vercel out of the box (configured vi
 | **Global Carbon Project** | Emissions data provider | [globalcarbonproject.org](https://www.globalcarbonproject.org) |
 | **UNFCCC** | GHG inventories | [unfccc.int](https://unfccc.int) |
 
-### Economic Data
+### Economic & Human Data APIs
 
-| Source | Description | Used For |
+| Source | Description | Built-In Integration |
 |--------|-------------|----------|
-| **World Bank** | GDP per capita (nominal USD) | Global Context panel |
-| **UNDP** | Human Development Index (HDI) | HDI-adjusted emissions |
+| **World Bank API** | GDP per capita (nominal USD) `NY.GDP.PCAP.CD` | Data automatically fetched and cached |
+| **UNDP HDR API** | Human Development Index (HDI) | Live fetched tracking for over 190 countries |
 
 ### Policy References
 

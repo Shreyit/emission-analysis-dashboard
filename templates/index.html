@@ -738,7 +738,7 @@
         cursor: pointer;
         transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s ease, background 0.3s ease, border-color 0.3s ease;
         user-select: none;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.03), inset 0 1px 0 rgba(255,255,255,0.6);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03), inset 0 1px 0 rgba(255, 255, 255, 0.6);
         position: relative;
         overflow: hidden;
     }
@@ -746,7 +746,9 @@
     .phase-cell::after {
         content: '';
         position: absolute;
-        top: 0; left: 0; bottom: 0;
+        top: 0;
+        left: 0;
+        bottom: 0;
         width: 0;
         background: linear-gradient(to right, color-mix(in srgb, var(--phase-color, var(--primary)) 6%, transparent), transparent);
         transition: width 0.4s ease;
@@ -760,8 +762,8 @@
     .phase-cell:hover {
         transform: translateY(-3px) scale(1.01);
         background: rgba(255, 255, 255, 0.8);
-        border-color: rgba(255,255,255,0.6);
-        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06), inset 0 1px 0 rgba(255,255,255,0.8);
+        border-color: rgba(255, 255, 255, 0.6);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.8);
     }
 
     .phase-cell:active {
@@ -821,7 +823,7 @@
         cursor: pointer;
         transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s ease, background 0.3s ease, border-color 0.3s ease;
         user-select: none;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.03), inset 0 1px 0 rgba(255,255,255,0.6);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03), inset 0 1px 0 rgba(255, 255, 255, 0.6);
         position: relative;
         overflow: hidden;
     }
@@ -829,7 +831,9 @@
     .tier-cell::after {
         content: '';
         position: absolute;
-        top: 0; left: 0; bottom: 0;
+        top: 0;
+        left: 0;
+        bottom: 0;
         width: 0;
         background: linear-gradient(to right, color-mix(in srgb, var(--tier-color, var(--primary)) 6%, transparent), transparent);
         transition: width 0.4s ease;
@@ -842,8 +846,8 @@
 
     .tier-cell:hover {
         background: rgba(255, 255, 255, 0.8);
-        border-color: rgba(255,255,255,0.6);
-        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06), inset 0 1px 0 rgba(255,255,255,0.8);
+        border-color: rgba(255, 255, 255, 0.6);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.8);
         transform: translateY(-2px);
     }
 
@@ -1228,7 +1232,7 @@
         <div class="card">
             <div class="card-head">
                 <span class="card-title">GDP vs CO₂ Emissions</span>
-                <span class="card-badge">scatter</span>
+                <span class="card-badge">scatter (bubble size = population)</span>
             </div>
             <div class="chart-container" id="scatterChart">
                 <div class="spinner-wrap">
@@ -1297,9 +1301,11 @@
     <!-- Side by side: donut + bar breakdown -->
     <div class="chart-grid-2">
         <div class="card">
-            <div class="card-head">
-                <span class="card-title" id="sourcesChartTitle">CO₂ by Source</span>
-                <span class="card-badge">2023</span>
+            <div class="card-head" style="display: flex; align-items: center; gap: 10px;">
+                <span class="card-title" id="sourcesChartTitle" style="flex: 1;">CO₂ by Source</span>
+                <button id="fmPlayBtn" class="btn-primary" style="padding: 4px 10px; font-size: 11px;">▶ Play</button>
+                <input type="range" id="fmSlider" style="flex: 2; accent-color: var(--accent);">
+                <span class="card-badge" id="fmYearDisplay">2023</span>
             </div>
             <div class="chart-container" id="sourcesChart">
                 <div class="spinner-wrap">
@@ -1501,20 +1507,23 @@
             <div class="card-head"><span class="card-title">Climate & Policy References</span></div>
             <div
                 style="margin-top:0.75rem;display:flex;flex-direction:column;gap:0.6rem;font-size:0.88rem;color:var(--text2);line-height:1.6">
-                <div><strong style="color:var(--text)">IEA</strong> — International Energy Agency. (2023). <em>World Energy
-                        Outlook 2023</em>. <a href="https://www.iea.org/reports/world-energy-outlook-2023" target="_blank"
-                        style="color:var(--primary)">iea.org</a></div>
+                <div><strong style="color:var(--text)">IEA</strong> — International Energy Agency. (2023). <em>World
+                        Energy
+                        Outlook 2023</em>. <a href="https://www.iea.org/reports/world-energy-outlook-2023"
+                        target="_blank" style="color:var(--primary)">iea.org</a></div>
                 <div><strong style="color:var(--text)">IPCC</strong> — IPCC. (2023). <em>Climate change 2023: Synthesis
                         report</em>. AR6. <a href="https://doi.org/10.59327/IPCC/AR6-9789291691647" target="_blank"
                         style="color:var(--primary)">doi.org</a></div>
                 <div><strong style="color:var(--text)">ICAP</strong> — International Carbon Action Partnership. (2023).
                     <em>Emissions trading worldwide: Status report 2023</em>. <a
                         href="https://icapcarbonaction.com/en/publications/emissions-trading-worldwide-2023-icap-status-report"
-                        target="_blank" style="color:var(--primary)">icapcarbonaction.com</a></div>
+                        target="_blank" style="color:var(--primary)">icapcarbonaction.com</a>
+                </div>
                 <div><strong style="color:var(--text)">Climate Transparency</strong> — Climate Transparency. (2022).
                     <em>Climate transparency report 2022</em>. <a
                         href="https://www.climate-transparency.org/countries/asia/south-korea" target="_blank"
-                        style="color:var(--primary)">climate-transparency.org</a></div>
+                        style="color:var(--primary)">climate-transparency.org</a>
+                </div>
             </div>
         </div>
 
@@ -1523,14 +1532,14 @@
             <div
                 style="margin-top:0.75rem;display:flex;flex-direction:column;gap:0.5rem;font-size:0.85rem;color:var(--text2);line-height:1.5">
                 <div><strong style="color:var(--text)">Step 3.5 Flash</strong> — 196B MoE model via OpenRouter</div>
-                <div><strong style="color:var(--text)">Qwen 3.6 Plus Preview</strong> — 1M context, hybrid architecture. <a
-                        href="https://qwen.ai/blog/qwen3.6-plus-preview" target="_blank"
+                <div><strong style="color:var(--text)">Qwen 3.6 Plus Preview</strong> — 1M context, hybrid architecture.
+                    <a href="https://qwen.ai/blog/qwen3.6-plus-preview" target="_blank"
                         style="color:var(--primary)">qwen.ai</a></div>
-                <div><strong style="color:var(--text)">NVIDIA Nemotron-3</strong> — Super (120B) & Nano (30B) hybrids. <a
-                        href="https://www.nvidia.com/en-us/ai-data-science/generative-ai/" target="_blank"
+                <div><strong style="color:var(--text)">NVIDIA Nemotron-3</strong> — Super (120B) & Nano (30B) hybrids.
+                    <a href="https://www.nvidia.com/en-us/ai-data-science/generative-ai/" target="_blank"
                         style="color:var(--primary)">nvidia.com</a></div>
-                <div><strong style="color:var(--text)">Arcee-AI Trinity Mini</strong> — 26B MoE for efficient reasoning. <a
-                        href="https://arcee.ai/models" target="_blank" style="color:var(--primary)">arcee.ai</a></div>
+                <div><strong style="color:var(--text)">Arcee-AI Trinity Mini</strong> — 26B MoE for efficient reasoning.
+                    <a href="https://arcee.ai/models" target="_blank" style="color:var(--primary)">arcee.ai</a></div>
             </div>
             <div style="margin-top:0.5rem;font-size:0.8rem;color:var(--text3);font-style:italic">
                 All models accessed via OpenRouter API (openrouter.ai)
@@ -2032,7 +2041,7 @@
 
             <!-- Bottom bar -->
             <div class="footer-bottom">
-                <div class="footer-copy">© 2025 Shreyit Sinha — CO₂ Emission Trend Analysis</div>
+                <div class="footer-copy">© 2026 Shreyit Sinha — CO₂ Emission Trend Analysis. All Rights Reserved.</div>
                 <div class="footer-made">
                     Made with <span class="footer-heart">♥</span> for climate awareness
                 </div>
@@ -2542,9 +2551,11 @@
             if (!countries.length) throw new Error('No comparison data');
 
             const egyptColor = '#5E8C61';
-            const maroonGradient = ['#8B5A4A', '#9E6B5B', '#B07B6B', '#C28B7B', '#D49B8B'];
+            const maroonGradient = ['#8B5A4A', '#9E6B5B', '#B07B6B', '#C28B7B', '#D49B8B', '#B87B6A', '#9B6151'];
+            const mustardToBrownGradient = ['#E4B429', '#D59620', '#C57918', '#B15B10', '#954109', '#782C05', '#551C02'];
             const getBarColor = (name, index) => name === 'Egypt' ? egyptColor : maroonGradient[index % maroonGradient.length];
-            const getScatterColor = (name) => name === 'Egypt' ? egyptColor : 'rgba(139,90,74,0.6)';
+            const scatterGradientOpac = mustardToBrownGradient.map(c => c + 'CC'); // 80% opacity
+            const getScatterColor = (name, index) => name === 'Egypt' ? '#5E8C61CC' : scatterGradientOpac[index % scatterGradientOpac.length];
 
             const compCountries = countries.filter(c => c.co2_per_capita != null && !(c.code in { Africa: true, 'Middle East': true }));
             compCountries.sort((a, b) => b.co2_per_capita - a.co2_per_capita);
@@ -2571,48 +2582,73 @@
                 }]
             });
 
-            const scatterCountries = countries.filter(c => c.gdp != null && c.co2_per_capita != null);
+            const scatterCountries = countries
+                .filter(c => c.gdp_per_capita != null && c.co2_per_capita != null)
+                .sort((a, b) => a.gdp_per_capita - b.gdp_per_capita);
 
-            const sizes = scatterCountries.map(c => {
-                const pop = c.population || 0;
-                if (!pop) return 12;
-                const size = Math.sqrt(pop) / 1000;
-                return Math.max(14, Math.min(80, size));
-            });
+            /* Bubble sizing: gentle scaling so difference isn't extreme */
+            const popMillions = scatterCountries.map(c => (c.population || 0) / 1e6);
+            const bubbleSizes = popMillions.map(pop => Math.max(14, 12 + Math.pow(pop, 0.45) * 2));
+
+            /* X-axis: compute nice tick interval */
+            const xVals = scatterCountries.map(c => c.gdp_per_capita);
+            const xMin = Math.min(...xVals);
+            const xMax = Math.max(...xVals);
+            const xRange = xMax - xMin;
+            /* Pick a clean dtick: 1k, 2k, 5k, 10k, 20k, etc. */
+            const rawStep = xRange / 5;
+            const mag = Math.pow(10, Math.floor(Math.log10(rawStep)));
+            const nice = [1, 2, 5, 10].find(n => n * mag >= rawStep) * mag;
+            const axisStart = Math.max(0, Math.floor(xMin / nice) * nice - nice);
+            const axisEnd = Math.ceil(xMax / nice) * nice + nice;
+
+            /* Y-axis padding for label space */
+            const yVals = scatterCountries.map(c => c.co2_per_capita);
+            const yMax = Math.max(...yVals);
 
             plotInto('scatterChart', [{
-                x: scatterCountries.map(c => (c.gdp || 0) / 1e9),
-                y: scatterCountries.map(c => c.co2_per_capita),
+                x: xVals,
+                y: yVals,
                 mode: 'markers+text',
                 type: 'scatter',
                 text: scatterCountries.map(c => c.name),
                 textposition: 'top center',
+                cliponaxis: false,
                 textfont: { color: '#8B92A8', size: 10 },
                 marker: {
-                    size: sizes,
-                    color: scatterCountries.map(c => getScatterColor(c.name)),
+                    size: bubbleSizes,
+                    color: scatterCountries.map((c, i) => getScatterColor(c.name, i)),
                     line: { width: 1, color: 'rgba(255,255,255,0.5)' }
                 },
-                hovertemplate: '<b>%{text}</b><br>GDP: $%{x:,.2f}B<br>CO₂: %{y:.2f} t/capita<br>Population: %{marker.size:.1f}M<extra></extra>'
+                customdata: scatterCountries.map(c => [c.population / 1e6]),
+                hovertemplate: '<b>%{text}</b><br>' +
+                    'GDP per capita: $%{x:,.0f}<br>' +
+                    'CO₂ per capita: %{y:.2f} t<br>' +
+                    'Population: %{customdata[0]:.0f}M' +
+                    '<extra></extra>'
             }], {
-                margin: { t: 50, r: 16, b: 48, l: 56 },
+                margin: { t: 25, r: 16, b: 60, l: 56 },
                 xaxis: {
                     ...PB.xaxis,
-                    title: `GDP (Billion USD) — ${d.year}`,
+                    type: 'linear',
+                    title: `GDP per capita (USD) — ${d.year}`,
                     tickprefix: '$',
-                    tickformat: ',.2f',
+                    tickformat: ',d',
+                    dtick: nice,
+                    range: [axisStart, axisEnd],
                     tickfont: { color: '#7A6F5A' }
                 },
                 yaxis: {
                     ...PB.yaxis,
                     title: `t CO₂ / person — ${d.year}`,
+                    range: [0, yMax * 1.25],
                     tickfont: { color: '#7A6F5A' }
                 },
                 annotations: [{
-                    x: 1, y: 1, xref: 'paper', yref: 'paper',
-                    text: 'Bubble size = population', showarrow: false,
-                    font: { size: 10, color: '#666', style: 'italic' },
-                    xanchor: 'right', yanchor: 'bottom'
+                    x: 1, y: -0.28, xref: 'paper', yref: 'paper',
+                    text: 'Bubble size indicates population', showarrow: false,
+                    font: { size: 10, color: '#8B92A8', style: 'italic' },
+                    xanchor: 'right', yanchor: 'top'
                 }]
             });
 
@@ -2714,7 +2750,7 @@
         const el = document.getElementById(m.el);
         if (!el) return;
         el.innerHTML = aiBox(m.msg);
-        
+
         // Ensure user sees the AI box immediately
         setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 50);
         try {
@@ -2727,187 +2763,216 @@
         }
     }
 
-    /* ── SOURCES CHARTS ── */
+    /* ── SOURCES CHARTS (Donut + Stacked Area) with Animation ── */
+    let fmTimer = null;
+
     async function loadSourcesChart() {
         try {
             const res = await fetch(`/api/emission-sources/${currentCountry}`);
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
-            const d = await res.json();
-
-            /* Donut Chart */
+            const apiData = await res.json();
+            
+            const history = apiData.historical || [apiData];
+            const years = history.map(h => h.year);
+            const unitLabel = sourceMode === 'non-co2' ? 'Mt CO2e' : 'Mt CO₂';
+            
+            // Build the Donut specific colors
             const nonCo2Color = '#9B59B6';
-
-            let donutData, donutLabels, donutValues, donutColors, donutHole, donutTitle, donutUnit, colors;
-
-            if (sourceMode === 'non-co2') {
-                const srcColorsNonCo2 = { Gas: '#FF6B6B', Oil: '#F4A460', Coal: '#8B8682', Cement: '#4ECDC4', Flaring: '#E74C3C' };
-                colors = srcColorsNonCo2;
-                const co2Sources = ['coal_co2', 'oil_co2', 'gas_co2', 'cement_co2', 'flaring_co2'];
-                const co2Sum = co2Sources.reduce((sum, k) => sum + (+(d[k]) || 0), 0);
-                const totalGhg = +(d.total_ghg_excluding_lucf) || 0;
-                const nonCo2Gases = Math.max(0, totalGhg - co2Sum);
-
-                const sources = [
-                    { label: 'Gas', val: +(d.gas_co2) || 0, color: srcColorsNonCo2['Gas'] },
-                    { label: 'Oil', val: +(d.oil_co2) || 0, color: srcColorsNonCo2['Oil'] },
-                    { label: 'Coal', val: +(d.coal_co2) || 0, color: srcColorsNonCo2['Coal'] },
-                    { label: 'Cement', val: +(d.cement_co2) || 0, color: srcColorsNonCo2['Cement'] },
-                    { label: 'Flaring', val: +(d.flaring_co2) || 0, color: srcColorsNonCo2['Flaring'] },
-                    { label: 'Non-CO₂ (CH₄, N₂O)', val: nonCo2Gases, color: nonCo2Color }
-                ].filter(s => s.val > 0);
-
-                donutLabels = sources.map(s => s.label);
-                donutValues = sources.map(s => s.val);
-                donutColors = sources.map(s => s.color);
-                donutHole = 0.55;
-                donutTitle = 'GHG by Source';
-                donutUnit = 'Mt CO2e';
-            } else {
-                const srcColors = { Gas: '#C65D3B', Oil: '#8B6B4F', Coal: '#A89E8C', Cement: '#C9A84C', Flaring: '#5E8C61' };
-                colors = srcColors;
-                const sources = [
-                    { label: 'Gas', val: +(d.gas_co2) || 0 },
-                    { label: 'Oil', val: +(d.oil_co2) || 0 },
-                    { label: 'Coal', val: +(d.coal_co2) || 0 },
-                    { label: 'Cement', val: +(d.cement_co2) || 0 },
-                    { label: 'Flaring', val: +(d.flaring_co2) || 0 }
-                ].filter(s => s.val > 0);
-
-                donutLabels = sources.map(s => s.label);
-                donutValues = sources.map(s => s.val);
-                donutColors = sources.map(s => srcColors[s.label] || '#888');
-                donutHole = 0.55;
-                donutTitle = 'CO2 by Source';
-                donutUnit = 'Mt CO2';
-            }
-
-            plotInto('sourcesChart', [{
-                labels: donutLabels,
-                values: donutValues,
-                type: 'pie',
-                hole: donutHole,
-                marker: { colors: donutColors },
-                textfont: { color: '#E8EBF5', size: 11 },
-                hovertemplate: `<b>%{label}</b><br>%{value:.1f} ${donutUnit} (%{percent})<extra></extra>`
-            }], {
-                margin: { t: 16, r: 16, b: 48, l: 16 },
-                legend: { orientation: 'h', y: -0.2, font: { color: '#8B92A8' } },
-                showlegend: true
-            });
-
-            // Update card titles based on mode
+            const srcColorsNonCo2 = { Gas: '#FF6B6B', Oil: '#F4A460', Coal: '#8B8682', Cement: '#4ECDC4', Flaring: '#E74C3C' };
+            const srcColorsCo2 = { Gas: '#C65D3B', Oil: '#8B6B4F', Coal: '#A89E8C', Cement: '#C9A84C', Flaring: '#5E8C61' };
+            const colors = sourceMode === 'non-co2' ? srcColorsNonCo2 : srcColorsCo2;
+            
             const chartTitle = document.getElementById('sourcesChartTitle');
             const timeTitle = document.getElementById('sourcesTimeChartTitle');
             const timeBadge = document.getElementById('sourcesTimeChartBadge');
             if (chartTitle) chartTitle.textContent = sourceMode === 'non-co2' ? 'GHG by Source' : 'CO₂ by Source';
             if (timeTitle) timeTitle.textContent = sourceMode === 'non-co2' ? 'GHG Over Time' : 'Sources Over Time';
-            if (timeBadge) timeBadge.textContent = sourceMode === 'non-co2' ? 'Mt CO₂e' : 'Mt CO₂';
+            if (timeBadge) timeBadge.textContent = unitLabel;
 
-            /* Stacked area over time */
-            try {
-                const tRes = await fetch(`/api/trend/${currentCountry}`);
-                const td = await tRes.json();
-                const years = (td.total || {}).years || [];
-                const vals = (td.total || {}).values || [];
+            // Render Stacked Area chart logic first (uses full history)
+            let traces = [];
+            if (years.length) {
+                if (sourceMode === 'non-co2') {
+                    const keys = ['coal_co2', 'oil_co2', 'gas_co2', 'cement_co2', 'flaring_co2'];
+                    const co2Traces = keys.map(k => ({
+                        x: years,
+                        y: history.map(h => +(h[k] || 0).toFixed(2)),
+                        name: k.replace('_co2', ''),
+                        stackgroup: 'one',
+                        fillcolor: srcColorsNonCo2[k.replace('_co2', '')] ? srcColorsNonCo2[k.replace('_co2', '')] + '88' : '#88888888',
+                        line: { color: srcColorsNonCo2[k.replace('_co2', '')] || '#888', width: 0 },
+                        hovertemplate: `<b>${k.replace('_co2', '')}</b><br>%{y:.1f} ${unitLabel}<extra></extra>`
+                    }));
+                    traces = [...co2Traces];
 
-                if (years.length) {
-                    const unitLabel = sourceMode === 'non-co2' ? 'Mt CO2e' : 'Mt CO₂';
-                    let traces = [];
-
-                    if (sourceMode === 'non-co2') {
-                        const srcColorsNonCo2 = { Gas: '#FF6B6B', Oil: '#F4A460', Coal: '#8B8682', Cement: '#4ECDC4', Flaring: '#E74C3C' };
-                        const co2Sources = ['coal_co2', 'oil_co2', 'gas_co2', 'cement_co2', 'flaring_co2'];
-                        const co2Sum = +((d.coal_co2 || 0) + (d.oil_co2 || 0) + (d.gas_co2 || 0) + (d.cement_co2 || 0) + (d.flaring_co2 || 0));
-                        const totalGhg = +(d.total_ghg_excluding_lucf) || 0;
-                        const nonCo2Ratio = co2Sum > 0 ? (totalGhg - co2Sum) / co2Sum : 0;
-
-                        // CO2 sources
-                        const srcColorMap = {
-                            'coal_co2': srcColorsNonCo2['Coal'],
-                            'oil_co2': srcColorsNonCo2['Oil'],
-                            'gas_co2': srcColorsNonCo2['Gas'],
-                            'cement_co2': srcColorsNonCo2['Cement'],
-                            'flaring_co2': srcColorsNonCo2['Flaring']
-                        };
-                        const co2Traces = co2Sources.map(k => ({
-                            x: years,
-                            y: vals.map(v => {
-                                const ratio = {
-                                    'coal_co2': d.coal_co2, 'oil_co2': d.oil_co2, 'gas_co2': d.gas_co2,
-                                    'cement_co2': d.cement_co2, 'flaring_co2': d.flaring_co2
-                                }[k] / co2Sum;
-                                return +(v * ratio).toFixed(2);
-                            }),
-                            name: k.replace('_co2', ''),
-                            stackgroup: 'one',
-                            fillcolor: srcColorMap[k] ? srcColorMap[k] + '88' : '#88888888',
-                            line: { color: srcColorMap[k] || '#888', width: 0 },
-                            hovertemplate: `<b>${k.replace('_co2', '')}</b><br>%{y:.1f} ${unitLabel}<extra></extra>`
-                        }));
-                        traces = [...co2Traces];
-
-                        // Non-CO2 layer
+                    traces.push({
+                        x: years,
+                        y: history.map(h => {
+                            const co2Sum = keys.reduce((sum, key) => sum + (h[key] || 0), 0);
+                            const totalGhg = h.total_ghg_excluding_lucf || 0;
+                            return +(Math.max(0, totalGhg - co2Sum)).toFixed(2);
+                        }),
+                        name: 'Non-CO₂ (CH₄, N₂O)',
+                        stackgroup: 'one',
+                        fillcolor: nonCo2Color + '88',
+                        line: { color: nonCo2Color, width: 0 },
+                        hovertemplate: `<b>Non-CO2</b><br>%{y:.1f} ${unitLabel}<extra></extra>`
+                    });
+                    
+                    const lulucfMax = Math.max(...history.map(h => Math.abs(h.land_use_change_co2 || 0)));
+                    if (lulucfMax > 0.01) {
                         traces.push({
                             x: years,
-                            y: vals.map(v => +(v * nonCo2Ratio).toFixed(2)),
-                            name: 'Non-CO₂ (CH₄, N₂O)',
-                            stackgroup: 'one',
-                            fillcolor: nonCo2Color + '88',
-                            line: { color: nonCo2Color, width: 0 },
-                            hovertemplate: `<b>Non-CO2</b><br>%{y:.1f} ${unitLabel}<extra></extra>`
+                            y: history.map(h => +(h.land_use_change_co2 || 0).toFixed(2)),
+                            name: 'LULUCF',
+                            type: 'scatter',
+                            mode: 'lines',
+                            line: { color: '#27AE60', dash: 'dash', width: 2 },
+                            hovertemplate: `<b>LULUCF</b><br>%{y:.2f} ${unitLabel}<extra></extra>`
                         });
-
-                        // LULUCF line overlay (hide if data is zero)
-                        const lucDataRes = await fetch(`/api/emission-sources/${currentCountry}`);
-                        const lucData = await lucDataRes.json();
-                        const lucVal = +(lucData.land_use_change_co2) || 0;
-                        if (Math.abs(lucVal) > 0.01) {
-                            const totalCo2Val = +(d.total_co2) || 1;
-                            traces.push({
-                                x: years,
-                                y: vals.map(v => +(v * (lucVal / totalCo2Val)).toFixed(2)),
-                                name: 'LULUCF',
-                                type: 'scatter',
-                                mode: 'lines',
-                                line: { color: '#27AE60', dash: 'dash', width: 2 },
-                                hovertemplate: `<b>LULUCF</b><br>%{y:.2f} ${unitLabel}<extra></extra>`
-                            });
-                        }
-                    } else {
-                        const srcColors = { Gas: '#C65D3B', Oil: '#8B6B4F', Coal: '#A89E8C', Cement: '#C9A84C', Flaring: '#5E8C61' };
-                        const total = +(d.total_co2) || 0;
-                        if (total) {
-                            const sources = [
-                                { label: 'Gas', val: +(d.gas_co2) || 0 },
-                                { label: 'Oil', val: +(d.oil_co2) || 0 },
-                                { label: 'Coal', val: +(d.coal_co2) || 0 },
-                                { label: 'Cement', val: +(d.cement_co2) || 0 },
-                                { label: 'Flaring', val: +(d.flaring_co2) || 0 }
-                            ].filter(s => s.val > 0);
-
-                            traces = sources.map(s => ({
-                                x: years,
-                                y: vals.map(v => +(v * (s.val / total)).toFixed(2)),
-                                name: s.label,
-                                stackgroup: 'one',
-                                fillcolor: srcColors[s.label] ? srcColors[s.label] + '88' : '#88888888',
-                                line: { color: srcColors[s.label] || '#888', width: 0 },
-                                hovertemplate: `<b>${s.label}</b><br>%{y:.1f} ${unitLabel}<extra></extra>`
-                            }));
-                        }
                     }
-
-                    plotInto('sourcesTimeChart', traces, {
-                        legend: { orientation: 'h', y: -0.25, font: { color: '#8B92A8' } },
-                        showlegend: true,
-                        yaxis: { ...PB.yaxis, title: unitLabel }
-                    });
                 } else {
-                    showChartError('sourcesTimeChart', 'Time series not available');
+                    const keys = ['gas_co2', 'oil_co2', 'coal_co2', 'cement_co2', 'flaring_co2'];
+                    const labels = { 'gas_co2': 'Gas', 'oil_co2': 'Oil', 'coal_co2': 'Coal', 'cement_co2': 'Cement', 'flaring_co2': 'Flaring' };
+                    traces = keys.map(k => ({
+                        x: years,
+                        y: history.map(h => +(h[k] || 0).toFixed(2)),
+                        name: labels[k],
+                        stackgroup: 'one',
+                        fillcolor: srcColorsCo2[labels[k]] ? srcColorsCo2[labels[k]] + '88' : '#88888888',
+                        line: { color: srcColorsCo2[labels[k]] || '#888', width: 0 },
+                        hovertemplate: `<b>${labels[k]}</b><br>%{y:.1f} ${unitLabel}<extra></extra>`
+                    }));
                 }
-            } catch (_) {
+
+                plotInto('sourcesTimeChart', traces, {
+                    legend: { orientation: 'h', y: -0.25, font: { color: '#8B92A8' } },
+                    showlegend: true,
+                    yaxis: { ...PB.yaxis, title: unitLabel }
+                });
+            } else {
                 showChartError('sourcesTimeChart', 'Time series not available');
             }
+
+            // Function to render Donut chart and Time Area sweeping line at a specific year
+            const renderYear = (idx, isAuto) => {
+                const yearData = history[idx];
+                if(!yearData) return;
+                const year = yearData.year;
+                const yearDisplay = document.getElementById('fmYearDisplay');
+                if (yearDisplay) yearDisplay.innerText = year;
+                const sliderEl = document.getElementById('fmSlider');
+                if (sliderEl) sliderEl.value = idx;
+                
+                let donutLabels, donutValues, donutColors;
+                if (sourceMode === 'non-co2') {
+                    const co2Sources = ['coal_co2', 'oil_co2', 'gas_co2', 'cement_co2', 'flaring_co2'];
+                    const co2Sum = co2Sources.reduce((sum, key) => sum + (yearData[key] || 0), 0);
+                    const totalGhg = yearData.total_ghg_excluding_lucf || 0;
+                    const nonCo2Gases = Math.max(0, totalGhg - co2Sum);
+                    
+                    const sources = [
+                        { label: 'Gas', val: +(yearData.gas_co2) || 0, color: colors['Gas'] },
+                        { label: 'Oil', val: +(yearData.oil_co2) || 0, color: colors['Oil'] },
+                        { label: 'Coal', val: +(yearData.coal_co2) || 0, color: colors['Coal'] },
+                        { label: 'Cement', val: +(yearData.cement_co2) || 0, color: colors['Cement'] },
+                        { label: 'Flaring', val: +(yearData.flaring_co2) || 0, color: colors['Flaring'] },
+                        { label: 'Non-CO₂', val: nonCo2Gases, color: nonCo2Color }
+                    ].filter(s => s.val > 0);
+                    donutLabels = sources.map(s => s.label);
+                    donutValues = sources.map(s => s.val);
+                    donutColors = sources.map(s => s.color);
+                } else {
+                    const sources = [
+                        { label: 'Gas', val: +(yearData.gas_co2) || 0 },
+                        { label: 'Oil', val: +(yearData.oil_co2) || 0 },
+                        { label: 'Coal', val: +(yearData.coal_co2) || 0 },
+                        { label: 'Cement', val: +(yearData.cement_co2) || 0 },
+                        { label: 'Flaring', val: +(yearData.flaring_co2) || 0 }
+                    ].filter(s => s.val > 0);
+                    donutLabels = sources.map(s => s.label);
+                    donutValues = sources.map(s => s.val);
+                    donutColors = sources.map(s => colors[s.label] || '#888');
+                }
+
+                if (!document.getElementById('sourcesChart').querySelector('.xy')) {
+                    plotInto('sourcesChart', [{
+                        labels: donutLabels,
+                        values: donutValues,
+                        type: 'pie',
+                        hole: 0.55,
+                        sort: false,
+                        marker: { colors: donutColors },
+                        textfont: { color: '#E8EBF5', size: 11 },
+                        hovertemplate: `<b>%{label}</b><br>%{value:.1f} ${unitLabel} (%{percent})<extra></extra>`
+                    }], {
+                        margin: { t: 16, r: 16, b: 48, l: 16 },
+                        legend: { orientation: 'h', y: -0.2, font: { color: '#8B92A8' } },
+                        hovermode: 'closest'
+                    });
+                } else {
+                    Plotly.react('sourcesChart', [{
+                        labels: donutLabels,
+                        values: donutValues,
+                        type: 'pie',
+                        hole: 0.55,
+                        sort: false,
+                        marker: { colors: donutColors },
+                        textfont: { color: '#E8EBF5', size: 11 },
+                        hovertemplate: `<b>%{label}</b><br>%{value:.1f} ${unitLabel} (%{percent})<extra></extra>`
+                    }], document.getElementById('sourcesChart').layout);
+                }
+
+                if (document.getElementById('sourcesTimeChart').querySelector('.xy') && document.getElementById('fmSlider')) {
+                    Plotly.relayout('sourcesTimeChart', {
+                        shapes: [{
+                            type: 'line', x0: year, x1: year, y0: 0, y1: 1,
+                            xref: 'x', yref: 'paper',
+                            line: { color: '#FF765C', width: 2, dash: 'dot' }
+                        }]
+                    });
+                }
+            };
+
+            const slider = document.getElementById('fmSlider');
+            const playBtn = document.getElementById('fmPlayBtn');
+            if (slider && playBtn) {
+                slider.min = 0;
+                slider.max = Math.max(0, history.length - 1);
+                
+                const stopAnim = () => {
+                    if (fmTimer) clearInterval(fmTimer);
+                    fmTimer = null;
+                    playBtn.innerHTML = '▶ Play';
+                };
+
+                slider.oninput = (e) => {
+                    stopAnim();
+                    renderYear(parseInt(e.target.value), false);
+                };
+
+                playBtn.onclick = () => {
+                    if (fmTimer) {
+                        stopAnim();
+                    } else {
+                        playBtn.innerHTML = '❚❚ Pause';
+                        let currentIdx = parseInt(slider.value);
+                        if (currentIdx >= history.length - 1) currentIdx = 0; // Restart from beginning if at the end
+                        
+                        fmTimer = setInterval(() => {
+                            currentIdx++;
+                            if (currentIdx >= history.length) {
+                                stopAnim();
+                                return;
+                            }
+                            renderYear(currentIdx, true);
+                        }, 500); // 500ms per year
+                    }
+                };
+            }
+
+            // Start at the end (2023)
+            renderYear(history.length > 0 ? history.length - 1 : 0, false);
 
             /* Footnote for Non-CO2 mode */
             const footnote = document.getElementById('sourcesFootnote');
