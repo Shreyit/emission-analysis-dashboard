@@ -2564,6 +2564,7 @@
                 x: compCountries.map(c => c.name),
                 y: compCountries.map(c => c.co2_per_capita),
                 type: 'bar',
+                cliponaxis: false,
                 marker: { color: compCountries.map((c, i) => getBarColor(c.name, i)) },
                 hovertemplate: '<b>%{x}</b><br>%{y:.2f} t CO₂/person<extra></extra>'
             }], {
@@ -2659,6 +2660,7 @@
                     x: hdiCountries.map(c => c.name),
                     y: hdiCountries.map(c => c.hdi_adjusted),
                     type: 'bar',
+                    cliponaxis: false,
                     marker: { color: hdiCountries.map((c, i) => getBarColor(c.name, i)) },
                     text: hdiCountries.map(c => (c.co2_per_capita / c.hdi).toFixed(2)),
                     customdata: hdiCountries.map(c => c.hdi),
@@ -2678,6 +2680,7 @@
                     x: intensityData.map(c => c.name),
                     y: intensityData.map(c => c.carbon_intensity),
                     type: 'bar',
+                    cliponaxis: false,
                     marker: { color: intensityData.map((c, i) => getBarColor(c.name, i)) },
                     hovertemplate: '<b>%{x}</b><br>%{y:.2f} t CO₂ / million USD<extra></extra>'
                 }], {
@@ -2687,6 +2690,9 @@
             } else {
                 showChartError('intensityChart', 'Carbon intensity unavailable');
             }
+
+            // Force a browser resize event to let Plotly readjust chart dimensions in case flexbox layout collapsed it on initial load
+            setTimeout(() => window.dispatchEvent(new Event('resize')), 150);
 
         } catch (e) {
             console.error('Comparison chart error:', e);

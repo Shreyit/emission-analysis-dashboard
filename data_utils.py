@@ -7,11 +7,14 @@ import os
 import json
 import time
 import urllib.request
+import threading
 import pandas as pd
 import numpy as np
 
 # Cache directory
 CACHE_DIR = os.path.join(os.path.dirname(__file__), "data", "cache")
+_hdi_lock = threading.Lock()
+_gdp_lock = threading.Lock()
 OWID_CACHE = os.path.join(CACHE_DIR, "owid_emissions.csv")
 NOMINAL_GDP_CACHE = os.path.join(CACHE_DIR, "worldbank_gdp_per_capita_nominal.csv")
 
@@ -29,46 +32,52 @@ def load_nominal_gdp_per_capita():
     if _nominal_gdp_df is not None:
         return _nominal_gdp_df
 
-    need_download = True
-    if os.path.exists(NOMINAL_GDP_CACHE):
-        age_days = (time.time() - os.path.getmtime(NOMINAL_GDP_CACHE)) / 86400
-        if age_days < 30:
-            need_download = False
+    with _gdp_lock:
+        if _nominal_gdp_df is not None:
+            return _nominal_gdp_df
 
-    if need_download:
-        try:
-            url = (
-                "https://api.worldbank.org/v2/country/all/indicator/NY.GDP.PCAP.CD"
-                "?date=2001:2023&format=json&per_page=20000"
-            )
-            req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
-            with urllib.request.urlopen(req, timeout=30) as resp:
-                raw = json.loads(resp.read().decode())
+        need_download = True
+        if os.path.exists(NOMINAL_GDP_CACHE):
+            age_days = (time.time() - os.path.getmtime(NOMINAL_GDP_CACHE)) / 86400
+            if age_days < 30:
+                need_download = False
 
-            rows = []
-            for entry in raw[1]:
-                if entry["value"] is not None:
-                    rows.append(
-                        {
-                            "iso_code": entry["countryiso3code"],
-                            "country": entry["country"]["value"],
-                            "year": int(entry["date"]),
-                            "gdp_per_capita_nominal": round(entry["value"]),
-                        }
-                    )
-            wb_df = pd.DataFrame(rows)
-            os.makedirs(CACHE_DIR, exist_ok=True)
-            wb_df.to_csv(NOMINAL_GDP_CACHE, index=False)
-            print(f"[data_utils] Downloaded {len(wb_df)} nominal GDP rows from World Bank")
-        except Exception as e:
-            print(f"[data_utils] World Bank download failed: {e}")
-            if not os.path.exists(NOMINAL_GDP_CACHE):
-                _nominal_gdp_df = pd.DataFrame(
-                    columns=["iso_code", "country", "year", "gdp_per_capita_nominal"]
+        if need_download:
+            try:
+                url = (
+                    "https://api.worldbank.org/v2/country/all/indicator/NY.GDP.PCAP.CD"
+                    "?date=2001:2023&format=json&per_page=20000"
                 )
-                return _nominal_gdp_df
+                req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+                with urllib.request.urlopen(req, timeout=30) as resp:
+                    raw = json.loads(resp.read().decode())
 
-    _nominal_gdp_df = pd.read_csv(NOMINAL_GDP_CACHE)
+                rows = []
+                for entry in raw[1]:
+                    if entry["value"] is not None:
+                        rows.append(
+                            {
+                                "iso_code": entry["countryiso3code"],
+                                "country": entry["country"]["value"],
+                                "year": int(entry["date"]),
+                                "gdp_per_capita_nominal": round(entry["value"]),
+                            }
+                        )
+                wb_df = pd.DataFrame(rows)
+                os.makedirs(CACHE_DIR, exist_ok=True)
+                temp_cache = NOMINAL_GDP_CACHE + ".tmp"
+                wb_df.to_csv(temp_cache, index=False)
+                os.replace(temp_cache, NOMINAL_GDP_CACHE)
+                print(f"[data_utils] Downloaded {len(wb_df)} nominal GDP rows from World Bank")
+            except Exception as e:
+                print(f"[data_utils] World Bank download failed: {e}")
+                if not os.path.exists(NOMINAL_GDP_CACHE):
+                    _nominal_gdp_df = pd.DataFrame(
+                        columns=["iso_code", "country", "year", "gdp_per_capita_nominal"]
+                    )
+                    return _nominal_gdp_df
+
+        _nominal_gdp_df = pd.read_csv(NOMINAL_GDP_CACHE)
     return _nominal_gdp_df
 
 
@@ -97,75 +106,89 @@ _hdi_df = None
 
 
 def load_hdi_data():
-    """Load (and download if missing/stale) HDI scores from UNDP HDR Data API.
-    Endpoint: https://hdrdata.org/api/CompositeIndices/query
-    Cached as CSV; refreshed if older than 30 days.
-    """
+    """Load (and download if missing/stale) HDI scores from UNDP HDR Data API."""
     global _hdi_df
     if _hdi_df is not None:
         return _hdi_df
 
-    need_download = True
-    if os.path.exists(HDI_CACHE):
-        age_days = (time.time() - os.path.getmtime(HDI_CACHE)) / 86400
-        if age_days < 30:
-            need_download = False
-
-    if need_download:
-        try:
-            api_key = os.environ.get("HDR_API_KEY", "")
-            if not api_key:
-                # Try loading from .env file directly
-                env_path = os.path.join(os.path.dirname(__file__), ".env")
-                if os.path.exists(env_path):
-                    with open(env_path) as f:
-                        for line in f:
-                            if line.strip().startswith("HDR_API_KEY="):
-                                api_key = line.strip().split("=", 1)[1]
-                                break
-            if not api_key:
-                print("[data_utils] HDR_API_KEY not found, using cached HDI data")
-                if os.path.exists(HDI_CACHE):
+    with _hdi_lock:
+        if _hdi_df is not None:
+            return _hdi_df
+            
+        need_download = True
+        if os.path.exists(HDI_CACHE):
+            try:
+                age_days = (time.time() - os.path.getmtime(HDI_CACHE)) / 86400
+                if age_days < 30:
                     need_download = False
-                else:
-                    _hdi_df = pd.DataFrame(columns=["iso_code", "hdi"])
+            except OSError:
+                pass
+
+        if need_download:
+            try:
+                api_key = os.environ.get("HDR_API_KEY", "")
+                if not api_key:
+                    env_path = os.path.join(os.path.dirname(__file__), ".env")
+                    if os.path.exists(env_path):
+                        with open(env_path) as f:
+                            for line in f:
+                                if line.strip().startswith("HDR_API_KEY="):
+                                    api_key = line.strip().split("=", 1)[1]
+                                    break
+                if not api_key:
+                    print("[data_utils] HDR_API_KEY not found, using cached HDI data")
+                    if os.path.exists(HDI_CACHE):
+                        need_download = False
+                    else:
+                        _hdi_df = pd.DataFrame(columns=["iso_code", "year", "hdi"])
+                        return _hdi_df
+
+                if need_download:
+                    url = (
+                        f"https://hdrdata.org/api/CompositeIndices/query"
+                        f"?apikey={api_key}&indicator=hdi"
+                    )
+                    req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+                    with urllib.request.urlopen(req, timeout=30) as resp:
+                        raw = json.loads(resp.read().decode())
+
+                    rows = []
+                    for entry in raw:
+                        iso = entry["country"].split(" - ")[0].strip()
+                        val = entry.get("value")
+                        yr = entry.get("year", 2023)
+                        if iso and val:
+                            rows.append({"iso_code": iso, "year": int(yr), "hdi": float(val)})
+                    hdi_df = pd.DataFrame(rows)
+                    os.makedirs(CACHE_DIR, exist_ok=True)
+                    # Write to temporary file then rename to avoid read_csv race conditions
+                    temp_cache = HDI_CACHE + ".tmp"
+                    hdi_df.to_csv(temp_cache, index=False)
+                    os.replace(temp_cache, HDI_CACHE)
+                    print(f"[data_utils] Downloaded {len(hdi_df)} HDI scores from UNDP HDR")
+            except Exception as e:
+                print(f"[data_utils] HDI download failed: {e}")
+                if not os.path.exists(HDI_CACHE):
+                    _hdi_df = pd.DataFrame(columns=["iso_code", "year", "hdi"])
                     return _hdi_df
 
-            if need_download:
-                url = (
-                    f"https://hdrdata.org/api/CompositeIndices/query"
-                    f"?apikey={api_key}&year=2023&indicator=hdi"
-                )
-                req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
-                with urllib.request.urlopen(req, timeout=30) as resp:
-                    raw = json.loads(resp.read().decode())
-
-                rows = []
-                for entry in raw:
-                    iso = entry["country"].split(" - ")[0].strip()
-                    val = entry.get("value")
-                    if iso and val:
-                        rows.append({"iso_code": iso, "hdi": float(val)})
-                hdi_df = pd.DataFrame(rows)
-                os.makedirs(CACHE_DIR, exist_ok=True)
-                hdi_df.to_csv(HDI_CACHE, index=False)
-                print(f"[data_utils] Downloaded {len(hdi_df)} HDI scores from UNDP HDR")
+        try:
+            _hdi_df = pd.read_csv(HDI_CACHE)
         except Exception as e:
-            print(f"[data_utils] HDI download failed: {e}")
-            if not os.path.exists(HDI_CACHE):
-                _hdi_df = pd.DataFrame(columns=["iso_code", "hdi"])
-                return _hdi_df
-
-    _hdi_df = pd.read_csv(HDI_CACHE)
+            print(f"[data_utils] HDI cache read failed: {e}")
+            _hdi_df = pd.DataFrame(columns=["iso_code", "year", "hdi"])
+            
     return _hdi_df
 
 
-def get_hdi_score(iso_code):
-    """Return HDI score for a country ISO code."""
+def get_hdi_score(iso_code, year=None):
+    """Return HDI score for a country ISO code, accurately matching the requested year."""
     hdi = load_hdi_data()
     if hdi.empty:
         return None
     row = hdi[hdi["iso_code"] == iso_code]
+    if "year" in row.columns and year is not None:
+        row = row[row["year"] <= year].sort_values("year", ascending=False)
     if not row.empty:
         return float(row.iloc[0]["hdi"])
     return None
@@ -494,7 +517,7 @@ def get_comparison_data(
             co2_per_capita = float(pc) if pd.notna(pc) else 0
 
             hdi_adjusted = None
-            hdi_score = get_hdi_score(code)
+            hdi_score = get_hdi_score(code, year)
             if co2_per_capita and hdi_score:
                 hdi_adjusted = round(co2_per_capita / hdi_score, 3)
 
@@ -522,7 +545,7 @@ def get_comparison_data(
                     "share_global_co2": share_global,
                     "ghg": ghg_val,
                     "ghg_per_capita": ghg_per_capita,
-                    "hdi": get_hdi_score(code),
+                    "hdi": get_hdi_score(code, year),
                     "hdi_adjusted": hdi_adjusted,
                     "gdp": gdp_val if gdp_val > 0 else None,
                     "gdp_per_capita": gdp_per_capita_val,

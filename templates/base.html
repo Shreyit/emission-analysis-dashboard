@@ -959,6 +959,8 @@
             if (entry.isIntersecting) {
                 entry.target.classList.add('visible');
                 revealObserver.unobserve(entry.target);
+                // Plotly hotfix: after the 450ms scroll animation finishes, trigger a resize to prevent 0-pixel bar height bugs
+                setTimeout(() => window.dispatchEvent(new Event('resize')), 500);
             }
         });
     }, { threshold: 0.08 });
