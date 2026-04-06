@@ -111,7 +111,12 @@ flowchart TD
         A[app.py<br>Routes] ~~~ B[data_utils.py<br>Data Logic] ~~~ C[ai_service.py<br>OpenRouter API]
     end
 
-    D[(OWID Data<br>owid_emissions.csv)]
+    subgraph LocalCache [Local CSV Cache]
+        direction LR
+        D1[(OWID Data<br>owid_emissions.csv)]
+        D2[(UNDP Data<br>undp_hdi_scores.csv)]
+        D3[(World Bank Data<br>worldbank_gdp.csv)]
+    end
 
     subgraph Templates [Jinja2 Templates]
         direction LR
@@ -123,7 +128,7 @@ flowchart TD
         G(Line Charts) ~~~ H(Donut Chart) ~~~ I(Bar Charts) ~~~ J(Scatter Plot)
     end
 
-    Backend --> D
+    Backend --> LocalCache
     Backend --> Templates
     Templates --> Frontend
 ```
@@ -313,7 +318,9 @@ emission_trend_analysis/
 │
 ├── data/
 │   ├── cache/
-│   │   └── owid_emissions.csv  # OWID data (cached)
+│   │   ├── owid_emissions.csv  # OWID data (cached)
+│   │   └── undp_hdi_scores.csv # UNDP data (cached)
+│   │   └── worldbank_gdp.csv   # World Bank data (cached)
 │   ├── fetch_data.ipynb   # Data fetching notebook
 │   ├── analysis.ipynb     # Analysis notebook
 │   └── countries.ipynb    # Country config notebook
@@ -326,7 +333,7 @@ emission_trend_analysis/
 │   └── egypt_hero.jpg     # Hero background image
 │
 ├── CODE_EXPLANATION.md    # Technical documentation
-└── README.md             # This file
+└── README.md              # This file
 ```
 
 ---
