@@ -35,6 +35,48 @@
         animation-delay: 0.34s;
     }
 
+    .prod-cons-toggle {
+        display: flex;
+        gap: 2px;
+        background: rgba(0, 0, 0, 0.04);
+        border-radius: 100px;
+        padding: 2px;
+    }
+
+    .prod-cons-toggle .toggle-btn {
+        padding: 0.25rem 0.6rem;
+        border: none;
+        background: transparent;
+        font-size: 0.7rem;
+        font-weight: 500;
+        border-radius: 100px;
+        cursor: pointer;
+        color: var(--text2);
+        transition: all 0.15s;
+        font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+
+    .prod-cons-toggle .toggle-btn.active {
+        background: var(--primary);
+        color: white;
+    }
+
+    .prod-cons-toggle .toggle-btn.active[data-mode="consumption"] {
+        background: #5E8C61;
+    }
+
+    .prod-cons-toggle .toggle-btn:hover:not(.active) {
+        background: rgba(0, 0, 0, 0.08);
+    }
+
+    .chart-caption {
+        font-size: 0.78rem;
+        color: var(--text2);
+        margin-top: 0.5rem;
+        padding: 0 0.5rem;
+        font-style: italic;
+    }
+
     /* ── INTRO HERO ── */
     .intro-hero {
         display: grid;
@@ -1154,6 +1196,10 @@
         <div class="card">
             <div class="card-head">
                 <span class="card-title">Total CO₂ Emissions</span>
+                <div class="prod-cons-toggle">
+                    <button class="toggle-btn active" data-mode="production" id="btn-prod">Production</button>
+                    <button class="toggle-btn" data-mode="consumption" id="btn-cons">Consumption</button>
+                </div>
                 <span class="card-badge">Mt CO₂</span>
             </div>
             <div class="chart-container" id="totalEmissionsChart">
@@ -1161,6 +1207,7 @@
                     <div class="spin"></div>Loading…
                 </div>
             </div>
+            <p class="chart-caption" id="prodConsCaption">Emissions physically generated within Egypt's borders.</p>
         </div>
         <div class="card">
             <div class="card-head">
@@ -1534,12 +1581,15 @@
                 <div><strong style="color:var(--text)">Step 3.5 Flash</strong> — 196B MoE model via OpenRouter</div>
                 <div><strong style="color:var(--text)">Qwen 3.6 Plus Preview</strong> — 1M context, hybrid architecture.
                     <a href="https://qwen.ai/blog/qwen3.6-plus-preview" target="_blank"
-                        style="color:var(--primary)">qwen.ai</a></div>
+                        style="color:var(--primary)">qwen.ai</a>
+                </div>
                 <div><strong style="color:var(--text)">NVIDIA Nemotron-3</strong> — Super (120B) & Nano (30B) hybrids.
                     <a href="https://www.nvidia.com/en-us/ai-data-science/generative-ai/" target="_blank"
-                        style="color:var(--primary)">nvidia.com</a></div>
+                        style="color:var(--primary)">nvidia.com</a>
+                </div>
                 <div><strong style="color:var(--text)">Arcee-AI Trinity Mini</strong> — 26B MoE for efficient reasoning.
-                    <a href="https://arcee.ai/models" target="_blank" style="color:var(--primary)">arcee.ai</a></div>
+                    <a href="https://arcee.ai/models" target="_blank" style="color:var(--primary)">arcee.ai</a>
+                </div>
             </div>
             <div style="margin-top:0.5rem;font-size:0.8rem;color:var(--text3);font-style:italic">
                 All models accessed via OpenRouter API (openrouter.ai)
@@ -2280,12 +2330,134 @@
     };
     const PC = { responsive: true, displayModeBar: false };
 
+    let prodConsMode = 'production';
+
+    document.querySelectorAll('.prod-cons-toggle .toggle-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.prod-cons-toggle .toggle-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            prodConsMode = btn.dataset.mode;
+            if (window._chartYears && window._chartValues) {
+                renderTotalChart();
+            }
+        });
+    });
+
+    function renderTotalChart() {
+        const years = window._chartYears || [];
+        const prodValues = window._chartValues || [];
+        const consValues = window._consumptionValues || [];
+
+        if (!years.length) return;
+
+        const phaseMap = {};
+        PHASES.forEach(ph => {
+            for (let y = ph.years[0]; y <= ph.years[1]; y++) phaseMap[y] = ph.name;
+        });
+
+        function buildPhaseTraces(yrs, vals) {
+            const traces = [];
+            PHASES.forEach((ph, i) => {
+                const nextPh = PHASES[i + 1];
+                const endYear = nextPh ? nextPh.years[0] : ph.years[1];
+                const segYrs = yrs.filter(y => y >= ph.years[0] && y <= endYear);
+                const segVals = segYrs.map(y => vals[yrs.indexOf(y)]);
+                if (!segYrs.length) return;
+                traces.push({
+                    x: segYrs, y: segVals,
+                    type: 'scatter', mode: 'none',
+                    fill: 'tozeroy',
+                    fillcolor: ph.fillColor,
+                    line: { color: 'transparent', width: 0 },
+                    hoverinfo: 'skip',
+                    showlegend: false
+                });
+            });
+            return traces;
+        }
+
+        const phaseFillTraces = buildPhaseTraces(years, prodValues);
+
+        function phaseAnnotations() {
+            return PHASES.map(ph => ({
+                x: (ph.years[0] + ph.years[1]) / 2,
+                y: 1.0,
+                xref: 'x', yref: 'paper',
+                text: ph.name,
+                showarrow: false,
+                font: { color: ph.color, size: 10, family: 'DM Sans, sans-serif' },
+                align: 'center',
+                xanchor: 'center',
+                yanchor: 'bottom'
+            }));
+        }
+
+        const traces = [...phaseFillTraces];
+        let yMax;
+        let captionText;
+
+        if (prodConsMode === 'production') {
+            traces.push({
+                x: years, y: prodValues,
+                customdata: years.map(y => phaseMap[y] || ''),
+                type: 'scatter', mode: 'lines+markers',
+                fill: 'tozeroy',
+                fillcolor: 'rgba(198,93,59,0.06)',
+                line: { color: '#C65D3B', width: 2, shape: 'spline' },
+                marker: { size: 5, opacity: 0.7, color: '#C65D3B' },
+                hovertemplate: '<b>%{x}</b><br>%{y:.1f} Mt CO₂<br><i>Phase: %{customdata}</i><extra></extra>',
+                showlegend: false
+            });
+            yMax = Math.max(...prodValues) * 1.15;
+            captionText = "Emissions physically generated within Egypt's borders.";
+        } else if (prodConsMode === 'consumption') {
+            traces.push({
+                x: years, y: consValues,
+                customdata: years.map(y => phaseMap[y] || ''),
+                type: 'scatter', mode: 'lines+markers',
+                fill: 'tozeroy',
+                fillcolor: 'rgba(94,140,97,0.06)',
+                line: { color: '#5E8C61', width: 2, shape: 'spline', dash: 'dot' },
+                marker: { size: 5, opacity: 0.7, color: '#5E8C61' },
+                hovertemplate: '<b>%{x}</b><br>%{y:.1f} Mt CO₂<br><i>Phase: %{customdata}</i><extra></extra>',
+                showlegend: false
+            });
+            yMax = Math.max(...consValues.filter(v => v > 0)) * 1.15;
+            captionText = "Emissions from goods consumed domestically, adjusted for imports and exports.";
+        }
+
+        document.getElementById('prodConsCaption').textContent = captionText;
+
+        plotInto('totalEmissionsChart', traces, {
+            annotations: phaseAnnotations(),
+            margin: { t: 40, r: 16, b: 48, l: 56 },
+            xaxis: { ...PB.xaxis, title: '' },
+            yaxis: { ...PB.yaxis, title: 'Mt CO₂', range: [100, yMax] }
+        });
+    }
+
     /* ── HELPER: clear spinner then render ── */
     function plotInto(id, traces, layout, cfg) {
         const el = document.getElementById(id);
         if (!el) return;
-        el.innerHTML = '';          // ← kills the spinner, gives Plotly clean div
-        Plotly.newPlot(el, traces, { ...PB, ...layout }, cfg || PC);
+
+        // If Plotly graph already exists, react() updates in place.
+        // We then fire a resize so Plotly recalculates bar geometry — without this,
+        // bars rendered while a CSS reveal animation is active measure 0-height.
+        if (el.querySelector('.js-plotly-plot')) {
+            Plotly.react(el, traces, { ...PB, ...layout }, cfg || PC).then(() => {
+                window.dispatchEvent(new Event('resize'));
+            });
+        } else {
+            el.innerHTML = ''; // Kill the initial spinner
+            // One rAF lets the browser reflow empty container back to its CSS min-height
+            // before Plotly measures offsetWidth/offsetHeight for the SVG viewport.
+            requestAnimationFrame(() => {
+                Plotly.newPlot(el, traces, { ...PB, ...layout }, cfg || PC).then(() => {
+                    window.dispatchEvent(new Event('resize'));
+                });
+            });
+        }
     }
 
     function showChartError(id, msg) {
@@ -2419,12 +2591,10 @@
             const pcYrs = pcc.years || [];
             const pcVals = pcc.values || [];
 
-            console.log('pcVals sample:', pcVals.slice(0, 5), 'max:', Math.max(...pcVals));
-
-            if (!years.length) throw new Error('No trend data returned from API');
-
             window._chartYears = years;
+            window._chartValues = values;
             window._chartPcYears = pcYrs;
+            window._consumptionValues = tot.consumption_values || [];
 
             const yMax = Math.max(...values) * 1.15;
             const pcYMax = Math.max(...pcVals) * 1.15;
@@ -2491,12 +2661,7 @@
                 showlegend: false
             };
 
-            plotInto('totalEmissionsChart', [...phaseFillTraces, totalMainTrace], {
-                annotations: totalAnnotations,
-                margin: { t: 40, r: 16, b: 48, l: 56 },
-                xaxis: { ...PB.xaxis, title: '' },
-                yaxis: { ...PB.yaxis, title: 'Mt CO₂', range: [100, yMax] }
-            });
+            renderTotalChart();
 
             /* ── PER CAPITA CHART ── */
             const pcMainTrace = {
@@ -2691,8 +2856,12 @@
                 showChartError('intensityChart', 'Carbon intensity unavailable');
             }
 
-            // Force a browser resize event to let Plotly readjust chart dimensions in case flexbox layout collapsed it on initial load
-            setTimeout(() => window.dispatchEvent(new Event('resize')), 150);
+            // Staggered resize events bracket the 450ms card reveal CSS transition.
+            // One of them is guaranteed to fire after the animation settles,
+            // regardless of how long the API response took.
+            [50, 300, 650].forEach(ms =>
+                setTimeout(() => window.dispatchEvent(new Event('resize')), ms)
+            );
 
         } catch (e) {
             console.error('Comparison chart error:', e);
@@ -2777,17 +2946,17 @@
             const res = await fetch(`/api/emission-sources/${currentCountry}`);
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             const apiData = await res.json();
-            
+
             const history = apiData.historical || [apiData];
             const years = history.map(h => h.year);
             const unitLabel = sourceMode === 'non-co2' ? 'Mt CO2e' : 'Mt CO₂';
-            
+
             // Build the Donut specific colors
             const nonCo2Color = '#9B59B6';
             const srcColorsNonCo2 = { Gas: '#FF6B6B', Oil: '#F4A460', Coal: '#8B8682', Cement: '#4ECDC4', Flaring: '#E74C3C' };
             const srcColorsCo2 = { Gas: '#C65D3B', Oil: '#8B6B4F', Coal: '#A89E8C', Cement: '#C9A84C', Flaring: '#5E8C61' };
             const colors = sourceMode === 'non-co2' ? srcColorsNonCo2 : srcColorsCo2;
-            
+
             const chartTitle = document.getElementById('sourcesChartTitle');
             const timeTitle = document.getElementById('sourcesTimeChartTitle');
             const timeBadge = document.getElementById('sourcesTimeChartBadge');
@@ -2796,6 +2965,10 @@
             if (timeBadge) timeBadge.textContent = unitLabel;
 
             // Render Stacked Area chart logic first (uses full history)
+            const getColor = (key) => {
+                const k = key.replace('_co2', '');
+                return (sourceMode === 'non-co2' ? srcColorsNonCo2 : srcColorsCo2)[k.charAt(0).toUpperCase() + k.slice(1)];
+            };
             let traces = [];
             if (years.length) {
                 if (sourceMode === 'non-co2') {
@@ -2805,8 +2978,8 @@
                         y: history.map(h => +(h[k] || 0).toFixed(2)),
                         name: k.replace('_co2', ''),
                         stackgroup: 'one',
-                        fillcolor: srcColorsNonCo2[k.replace('_co2', '')] ? srcColorsNonCo2[k.replace('_co2', '')] + '88' : '#88888888',
-                        line: { color: srcColorsNonCo2[k.replace('_co2', '')] || '#888', width: 0 },
+                        fillcolor: getColor(k) ? getColor(k) + '88' : '#88888888',
+                        line: { color: getColor(k) || '#888', width: 0 },
                         hovertemplate: `<b>${k.replace('_co2', '')}</b><br>%{y:.1f} ${unitLabel}<extra></extra>`
                     }));
                     traces = [...co2Traces];
@@ -2824,7 +2997,7 @@
                         line: { color: nonCo2Color, width: 0 },
                         hovertemplate: `<b>Non-CO2</b><br>%{y:.1f} ${unitLabel}<extra></extra>`
                     });
-                    
+
                     const lulucfMax = Math.max(...history.map(h => Math.abs(h.land_use_change_co2 || 0)));
                     if (lulucfMax > 0.01) {
                         traces.push({
@@ -2839,15 +3012,14 @@
                     }
                 } else {
                     const keys = ['gas_co2', 'oil_co2', 'coal_co2', 'cement_co2', 'flaring_co2'];
-                    const labels = { 'gas_co2': 'Gas', 'oil_co2': 'Oil', 'coal_co2': 'Coal', 'cement_co2': 'Cement', 'flaring_co2': 'Flaring' };
                     traces = keys.map(k => ({
                         x: years,
                         y: history.map(h => +(h[k] || 0).toFixed(2)),
-                        name: labels[k],
+                        name: k.replace('_co2', '').charAt(0).toUpperCase() + k.replace('_co2', '').slice(1),
                         stackgroup: 'one',
-                        fillcolor: srcColorsCo2[labels[k]] ? srcColorsCo2[labels[k]] + '88' : '#88888888',
-                        line: { color: srcColorsCo2[labels[k]] || '#888', width: 0 },
-                        hovertemplate: `<b>${labels[k]}</b><br>%{y:.1f} ${unitLabel}<extra></extra>`
+                        fillcolor: getColor(k) ? getColor(k) + '88' : '#88888888',
+                        line: { color: getColor(k) || '#888', width: 0 },
+                        hovertemplate: `<b>${k.replace('_co2', '')}</b><br>%{y:.1f} ${unitLabel}<extra></extra>`
                     }));
                 }
 
@@ -2863,20 +3035,20 @@
             // Function to render Donut chart and Time Area sweeping line at a specific year
             const renderYear = (idx, isAuto) => {
                 const yearData = history[idx];
-                if(!yearData) return;
+                if (!yearData) return;
                 const year = yearData.year;
                 const yearDisplay = document.getElementById('fmYearDisplay');
                 if (yearDisplay) yearDisplay.innerText = year;
                 const sliderEl = document.getElementById('fmSlider');
                 if (sliderEl) sliderEl.value = idx;
-                
+
                 let donutLabels, donutValues, donutColors;
                 if (sourceMode === 'non-co2') {
                     const co2Sources = ['coal_co2', 'oil_co2', 'gas_co2', 'cement_co2', 'flaring_co2'];
                     const co2Sum = co2Sources.reduce((sum, key) => sum + (yearData[key] || 0), 0);
                     const totalGhg = yearData.total_ghg_excluding_lucf || 0;
                     const nonCo2Gases = Math.max(0, totalGhg - co2Sum);
-                    
+
                     const sources = [
                         { label: 'Gas', val: +(yearData.gas_co2) || 0, color: colors['Gas'] },
                         { label: 'Oil', val: +(yearData.oil_co2) || 0, color: colors['Oil'] },
@@ -2929,8 +3101,13 @@
                     }], document.getElementById('sourcesChart').layout);
                 }
 
-                if (document.getElementById('sourcesTimeChart').querySelector('.xy') && document.getElementById('fmSlider')) {
-                    Plotly.relayout('sourcesTimeChart', {
+                // Guard: only draw the year marker line if the Sources Over Time chart
+                // is fully initialised with a valid layout. Without this check, Plotly.relayout
+                // fires on a partially-rendered chart during play animation, creating a ghost
+                // red line that floats without axes.
+                const timeChartEl = document.getElementById('sourcesTimeChart');
+                if (timeChartEl && timeChartEl._fullLayout && timeChartEl.querySelector('.xy')) {
+                    Plotly.relayout(timeChartEl, {
                         shapes: [{
                             type: 'line', x0: year, x1: year, y0: 0, y1: 1,
                             xref: 'x', yref: 'paper',
@@ -2945,7 +3122,7 @@
             if (slider && playBtn) {
                 slider.min = 0;
                 slider.max = Math.max(0, history.length - 1);
-                
+
                 const stopAnim = () => {
                     if (fmTimer) clearInterval(fmTimer);
                     fmTimer = null;
@@ -2964,7 +3141,7 @@
                         playBtn.innerHTML = '❚❚ Pause';
                         let currentIdx = parseInt(slider.value);
                         if (currentIdx >= history.length - 1) currentIdx = 0; // Restart from beginning if at the end
-                        
+
                         fmTimer = setInterval(() => {
                             currentIdx++;
                             if (currentIdx >= history.length) {

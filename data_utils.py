@@ -68,12 +68,19 @@ def load_nominal_gdp_per_capita():
                 temp_cache = NOMINAL_GDP_CACHE + ".tmp"
                 wb_df.to_csv(temp_cache, index=False)
                 os.replace(temp_cache, NOMINAL_GDP_CACHE)
-                print(f"[data_utils] Downloaded {len(wb_df)} nominal GDP rows from World Bank")
+                print(
+                    f"[data_utils] Downloaded {len(wb_df)} nominal GDP rows from World Bank"
+                )
             except Exception as e:
                 print(f"[data_utils] World Bank download failed: {e}")
                 if not os.path.exists(NOMINAL_GDP_CACHE):
                     _nominal_gdp_df = pd.DataFrame(
-                        columns=["iso_code", "country", "year", "gdp_per_capita_nominal"]
+                        columns=[
+                            "iso_code",
+                            "country",
+                            "year",
+                            "gdp_per_capita_nominal",
+                        ]
                     )
                     return _nominal_gdp_df
 
@@ -95,6 +102,7 @@ def get_nominal_gdp_pc(iso_code, year=2023):
         return int(row.iloc[0]["gdp_per_capita_nominal"])
     return None
 
+
 # Year range
 START_YEAR = 2001
 END_YEAR = 2023
@@ -114,7 +122,7 @@ def load_hdi_data():
     with _hdi_lock:
         if _hdi_df is not None:
             return _hdi_df
-            
+
         need_download = True
         if os.path.exists(HDI_CACHE):
             try:
@@ -148,7 +156,9 @@ def load_hdi_data():
                         f"https://hdrdata.org/api/CompositeIndices/query"
                         f"?apikey={api_key}&indicator=hdi"
                     )
-                    req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+                    req = urllib.request.Request(
+                        url, headers={"User-Agent": "Mozilla/5.0"}
+                    )
                     with urllib.request.urlopen(req, timeout=30) as resp:
                         raw = json.loads(resp.read().decode())
 
@@ -158,14 +168,18 @@ def load_hdi_data():
                         val = entry.get("value")
                         yr = entry.get("year", 2023)
                         if iso and val:
-                            rows.append({"iso_code": iso, "year": int(yr), "hdi": float(val)})
+                            rows.append(
+                                {"iso_code": iso, "year": int(yr), "hdi": float(val)}
+                            )
                     hdi_df = pd.DataFrame(rows)
                     os.makedirs(CACHE_DIR, exist_ok=True)
                     # Write to temporary file then rename to avoid read_csv race conditions
                     temp_cache = HDI_CACHE + ".tmp"
                     hdi_df.to_csv(temp_cache, index=False)
                     os.replace(temp_cache, HDI_CACHE)
-                    print(f"[data_utils] Downloaded {len(hdi_df)} HDI scores from UNDP HDR")
+                    print(
+                        f"[data_utils] Downloaded {len(hdi_df)} HDI scores from UNDP HDR"
+                    )
             except Exception as e:
                 print(f"[data_utils] HDI download failed: {e}")
                 if not os.path.exists(HDI_CACHE):
@@ -177,7 +191,7 @@ def load_hdi_data():
         except Exception as e:
             print(f"[data_utils] HDI cache read failed: {e}")
             _hdi_df = pd.DataFrame(columns=["iso_code", "year", "hdi"])
-            
+
     return _hdi_df
 
 
@@ -192,6 +206,7 @@ def get_hdi_score(iso_code, year=None):
     if not row.empty:
         return float(row.iloc[0]["hdi"])
     return None
+
 
 TIER_COMPARISONS = {
     "EGY": {
@@ -423,6 +438,9 @@ def calculate_trend_stats(country_code, metric="co2", df=None):
     values = data[metric].fillna(0).values
     years = data["year"].values
 
+    # Get consumption-based CO2 data
+    consumption_values = data["consumption_co2"].fillna(0).values
+
     # Linear regression
     if len(values) > 1:
         x = np.arange(len(values))
@@ -442,6 +460,7 @@ def calculate_trend_stats(country_code, metric="co2", df=None):
     return {
         "years": [int(y) for y in years],
         "values": [float(v) for v in values],
+        "consumption_values": [float(v) for v in consumption_values],
         "overall_change_pct": float(overall),
         "trend_direction": trend,
     }
@@ -531,7 +550,9 @@ def get_comparison_data(
 
             # Use World Bank nominal GDP per capita (current US$)
             iso = co2_row.get("iso_code", code)
-            gdp_per_capita_val = get_nominal_gdp_pc(iso if iso and len(str(iso)) == 3 else code, year)
+            gdp_per_capita_val = get_nominal_gdp_pc(
+                iso if iso and len(str(iso)) == 3 else code, year
+            )
 
             countries.append(
                 {
@@ -591,11 +612,17 @@ def get_emission_sources(country_code, year=None, df=None):
         return {
             "year": int(r_row["year"]),
             "total_co2": float(r_row["co2"]) if pd.notna(r_row.get("co2")) else 0,
-            "coal_co2": float(r_row["coal_co2"]) if pd.notna(r_row.get("coal_co2")) else 0,
+            "coal_co2": float(r_row["coal_co2"])
+            if pd.notna(r_row.get("coal_co2"))
+            else 0,
             "oil_co2": float(r_row["oil_co2"]) if pd.notna(r_row.get("oil_co2")) else 0,
             "gas_co2": float(r_row["gas_co2"]) if pd.notna(r_row.get("gas_co2")) else 0,
-            "cement_co2": float(r_row["cement_co2"]) if pd.notna(r_row.get("cement_co2")) else 0,
-            "flaring_co2": float(r_row["flaring_co2"]) if pd.notna(r_row.get("flaring_co2")) else 0,
+            "cement_co2": float(r_row["cement_co2"])
+            if pd.notna(r_row.get("cement_co2"))
+            else 0,
+            "flaring_co2": float(r_row["flaring_co2"])
+            if pd.notna(r_row.get("flaring_co2"))
+            else 0,
             "total_ghg_excluding_lucf": float(r_row["total_ghg_excluding_lucf"])
             if pd.notna(r_row.get("total_ghg_excluding_lucf"))
             else 0,
@@ -610,13 +637,16 @@ def get_emission_sources(country_code, year=None, df=None):
 
     latest_data = build_row_dict(r)
     latest_data["country_code"] = country_code
-    
+
     historical = []
     # Filter for the relevant years
-    hist_data = data[(data["year"] >= START_YEAR) & (data["year"] <= (year if year != END_YEAR else END_YEAR))]
+    hist_data = data[
+        (data["year"] >= START_YEAR)
+        & (data["year"] <= (year if year != END_YEAR else END_YEAR))
+    ]
     for _, h_row in hist_data.iterrows():
         historical.append(build_row_dict(h_row))
-    
+
     latest_data["historical"] = historical
     return latest_data
 

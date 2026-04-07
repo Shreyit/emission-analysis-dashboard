@@ -5,6 +5,7 @@
 # Session & development files
 session*
 implementation.md
+FINAL_REPORT.md
 *.log
 
 # Byte-compiled / optimized / DLL files
