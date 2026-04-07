@@ -3212,9 +3212,32 @@
         initComparisonYearDropdown();
         loadCountrySummary();
         setTimeout(loadEmissionsCharts, 100);
-        setTimeout(() => loadComparisonCharts(currentTier), 200);
+        // Comparison charts are lazy-loaded when the section enters the viewport.
+        // Eager pre-loading caused bars to render while cards are still off-screen
+        // (opacity:0, transform active), which corrupts Plotly's internal clipPath.
+        initLazyComparisonCharts();
         setTimeout(loadSourcesChart, 300);
         setTimeout(setupChartReset, 500);
+    }
+
+    function initLazyComparisonCharts() {
+        const section = document.getElementById('comparison');
+        if (!section) { setTimeout(() => loadComparisonCharts(currentTier), 200); return; }
+
+        let loaded = false;
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting && !loaded) {
+                    loaded = true;
+                    observer.disconnect();
+                    // Wait 60ms for the card's CSS reveal animation to start (revealObserver
+                    // adds .visible on the same scroll event), then let Plotly render into
+                    // the container with its correct expanded dimensions.
+                    setTimeout(() => loadComparisonCharts(currentTier), 60);
+                }
+            });
+        }, { threshold: 0.05 });
+        observer.observe(section);
     }
 
     function initComparisonYearDropdown() {
