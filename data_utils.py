@@ -580,12 +580,19 @@ def get_comparison_data(
                 }
             )
 
+    world_co2_pc = (
+        float(world_row["co2_per_capita"])
+        if world_row is not None and pd.notna(world_row.get("co2_per_capita"))
+        else None
+    )
+
     return {
         "primary_country": country_code,
         "comparison_countries": comparison_codes,
         "tier": tier,
         "year": year,
         "countries": countries,
+        "world_avg_per_capita": round(world_co2_pc, 2) if world_co2_pc else None,
     }
 
 

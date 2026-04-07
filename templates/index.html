@@ -35,39 +35,31 @@
         animation-delay: 0.34s;
     }
 
-    .prod-cons-toggle {
+    .chart-legend {
         display: flex;
-        gap: 2px;
-        background: rgba(0, 0, 0, 0.04);
-        border-radius: 100px;
-        padding: 2px;
+        gap: 1rem;
+        align-items: center;
     }
 
-    .prod-cons-toggle .toggle-btn {
-        padding: 0.25rem 0.6rem;
-        border: none;
-        background: transparent;
-        font-size: 0.7rem;
+    .chart-legend-item {
+        display: flex;
+        align-items: center;
+        gap: 0.35rem;
+        font-size: 0.72rem;
         font-weight: 500;
-        border-radius: 100px;
-        cursor: pointer;
         color: var(--text2);
-        transition: all 0.15s;
         font-family: 'Plus Jakarta Sans', sans-serif;
     }
 
-    .prod-cons-toggle .toggle-btn.active {
-        background: var(--primary);
-        color: white;
+    .legend-line {
+        width: 18px;
+        height: 2px;
+        border-radius: 1px;
     }
 
-    .prod-cons-toggle .toggle-btn.active[data-mode="consumption"] {
-        background: #5E8C61;
-    }
+    .legend-line.solid { background: #C65D3B; }
+    .legend-line.dotted { background: repeating-linear-gradient(to right, #5E8C61 0, #5E8C61 3px, transparent 3px, transparent 6px); height: 2px; }
 
-    .prod-cons-toggle .toggle-btn:hover:not(.active) {
-        background: rgba(0, 0, 0, 0.08);
-    }
 
     .chart-caption {
         font-size: 0.78rem;
@@ -1196,9 +1188,9 @@
         <div class="card">
             <div class="card-head">
                 <span class="card-title">Total CO₂ Emissions</span>
-                <div class="prod-cons-toggle">
-                    <button class="toggle-btn active" data-mode="production" id="btn-prod">Production</button>
-                    <button class="toggle-btn" data-mode="consumption" id="btn-cons">Consumption</button>
+                <div class="chart-legend">
+                    <div class="chart-legend-item"><span class="legend-line solid"></span>Production</div>
+                    <div class="chart-legend-item"><span class="legend-line dotted"></span>Consumption</div>
                 </div>
                 <span class="card-badge">Mt CO₂</span>
             </div>
@@ -1207,7 +1199,7 @@
                     <div class="spin"></div>Loading…
                 </div>
             </div>
-            <p class="chart-caption" id="prodConsCaption">Emissions physically generated within Egypt's borders.</p>
+            <p class="chart-caption">Solid line: territorial emissions. Dotted line: consumption-based (adjusted for imports/exports).</p>
         </div>
         <div class="card">
             <div class="card-head">
@@ -2330,134 +2322,12 @@
     };
     const PC = { responsive: true, displayModeBar: false };
 
-    let prodConsMode = 'production';
-
-    document.querySelectorAll('.prod-cons-toggle .toggle-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-            document.querySelectorAll('.prod-cons-toggle .toggle-btn').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            prodConsMode = btn.dataset.mode;
-            if (window._chartYears && window._chartValues) {
-                renderTotalChart();
-            }
-        });
-    });
-
-    function renderTotalChart() {
-        const years = window._chartYears || [];
-        const prodValues = window._chartValues || [];
-        const consValues = window._consumptionValues || [];
-
-        if (!years.length) return;
-
-        const phaseMap = {};
-        PHASES.forEach(ph => {
-            for (let y = ph.years[0]; y <= ph.years[1]; y++) phaseMap[y] = ph.name;
-        });
-
-        function buildPhaseTraces(yrs, vals) {
-            const traces = [];
-            PHASES.forEach((ph, i) => {
-                const nextPh = PHASES[i + 1];
-                const endYear = nextPh ? nextPh.years[0] : ph.years[1];
-                const segYrs = yrs.filter(y => y >= ph.years[0] && y <= endYear);
-                const segVals = segYrs.map(y => vals[yrs.indexOf(y)]);
-                if (!segYrs.length) return;
-                traces.push({
-                    x: segYrs, y: segVals,
-                    type: 'scatter', mode: 'none',
-                    fill: 'tozeroy',
-                    fillcolor: ph.fillColor,
-                    line: { color: 'transparent', width: 0 },
-                    hoverinfo: 'skip',
-                    showlegend: false
-                });
-            });
-            return traces;
-        }
-
-        const phaseFillTraces = buildPhaseTraces(years, prodValues);
-
-        function phaseAnnotations() {
-            return PHASES.map(ph => ({
-                x: (ph.years[0] + ph.years[1]) / 2,
-                y: 1.0,
-                xref: 'x', yref: 'paper',
-                text: ph.name,
-                showarrow: false,
-                font: { color: ph.color, size: 10, family: 'DM Sans, sans-serif' },
-                align: 'center',
-                xanchor: 'center',
-                yanchor: 'bottom'
-            }));
-        }
-
-        const traces = [...phaseFillTraces];
-        let yMax;
-        let captionText;
-
-        if (prodConsMode === 'production') {
-            traces.push({
-                x: years, y: prodValues,
-                customdata: years.map(y => phaseMap[y] || ''),
-                type: 'scatter', mode: 'lines+markers',
-                fill: 'tozeroy',
-                fillcolor: 'rgba(198,93,59,0.06)',
-                line: { color: '#C65D3B', width: 2, shape: 'spline' },
-                marker: { size: 5, opacity: 0.7, color: '#C65D3B' },
-                hovertemplate: '<b>%{x}</b><br>%{y:.1f} Mt CO₂<br><i>Phase: %{customdata}</i><extra></extra>',
-                showlegend: false
-            });
-            yMax = Math.max(...prodValues) * 1.15;
-            captionText = "Emissions physically generated within Egypt's borders.";
-        } else if (prodConsMode === 'consumption') {
-            traces.push({
-                x: years, y: consValues,
-                customdata: years.map(y => phaseMap[y] || ''),
-                type: 'scatter', mode: 'lines+markers',
-                fill: 'tozeroy',
-                fillcolor: 'rgba(94,140,97,0.06)',
-                line: { color: '#5E8C61', width: 2, shape: 'spline', dash: 'dot' },
-                marker: { size: 5, opacity: 0.7, color: '#5E8C61' },
-                hovertemplate: '<b>%{x}</b><br>%{y:.1f} Mt CO₂<br><i>Phase: %{customdata}</i><extra></extra>',
-                showlegend: false
-            });
-            yMax = Math.max(...consValues.filter(v => v > 0)) * 1.15;
-            captionText = "Emissions from goods consumed domestically, adjusted for imports and exports.";
-        }
-
-        document.getElementById('prodConsCaption').textContent = captionText;
-
-        plotInto('totalEmissionsChart', traces, {
-            annotations: phaseAnnotations(),
-            margin: { t: 40, r: 16, b: 48, l: 56 },
-            xaxis: { ...PB.xaxis, title: '' },
-            yaxis: { ...PB.yaxis, title: 'Mt CO₂', range: [100, yMax] }
-        });
-    }
-
     /* ── HELPER: clear spinner then render ── */
     function plotInto(id, traces, layout, cfg) {
         const el = document.getElementById(id);
         if (!el) return;
-
-        // If Plotly graph already exists, react() updates in place.
-        // We then fire a resize so Plotly recalculates bar geometry — without this,
-        // bars rendered while a CSS reveal animation is active measure 0-height.
-        if (el.querySelector('.js-plotly-plot')) {
-            Plotly.react(el, traces, { ...PB, ...layout }, cfg || PC).then(() => {
-                window.dispatchEvent(new Event('resize'));
-            });
-        } else {
-            el.innerHTML = ''; // Kill the initial spinner
-            // One rAF lets the browser reflow empty container back to its CSS min-height
-            // before Plotly measures offsetWidth/offsetHeight for the SVG viewport.
-            requestAnimationFrame(() => {
-                Plotly.newPlot(el, traces, { ...PB, ...layout }, cfg || PC).then(() => {
-                    window.dispatchEvent(new Event('resize'));
-                });
-            });
-        }
+        el.innerHTML = '';
+        Plotly.newPlot(el, traces, { ...PB, ...layout }, cfg || PC);
     }
 
     function showChartError(id, msg) {
@@ -2591,11 +2461,6 @@
             const pcYrs = pcc.years || [];
             const pcVals = pcc.values || [];
 
-            window._chartYears = years;
-            window._chartValues = values;
-            window._chartPcYears = pcYrs;
-            window._consumptionValues = tot.consumption_values || [];
-
             const yMax = Math.max(...values) * 1.15;
             const pcYMax = Math.max(...pcVals) * 1.15;
 
@@ -2648,20 +2513,39 @@
             const totalAnnotations = phaseAnnotations();
             const pcAnnotations = phaseAnnotations();
 
-            /* ── TOTAL CO2 CHART ── */
-            const totalMainTrace = {
-                x: years, y: values,
-                customdata: years.map(y => phaseMap[y] || ''),
-                type: 'scatter', mode: 'lines+markers',
-                fill: 'tozeroy',
-                fillcolor: 'rgba(198,93,59,0.06)',
-                line: { color: '#C65D3B', width: 2, shape: 'spline' },
-                marker: { size: 5, opacity: 0.7, color: '#C65D3B' },
-                hovertemplate: '<b>%{x}</b><br>%{y:.1f} Mt CO₂<br><i>Phase: %{customdata}</i><extra></extra>',
-                showlegend: false
-            };
+            /* ── TOTAL CO2 CHART (production + consumption on same chart) ── */
+            const consValues = tot.consumption_values || [];
+            const allMax = Math.max(Math.max(...values), Math.max(...consValues.filter(v => v > 0))) * 1.15;
 
-            renderTotalChart();
+            plotInto('totalEmissionsChart', [
+                ...phaseFillTraces,
+                {
+                    x: years, y: values,
+                    name: 'Production',
+                    customdata: years.map(y => phaseMap[y] || ''),
+                    type: 'scatter', mode: 'lines+markers',
+                    fill: 'tozeroy',
+                    fillcolor: 'rgba(198,93,59,0.06)',
+                    line: { color: '#C65D3B', width: 2, shape: 'spline' },
+                    marker: { size: 5, opacity: 0.7, color: '#C65D3B' },
+                    hovertemplate: '<b>%{x}</b><br>%{y:.1f} Mt CO₂ (Production)<br><i>Phase: %{customdata}</i><extra></extra>',
+                    showlegend: false
+                },
+                {
+                    x: years, y: consValues,
+                    name: 'Consumption',
+                    type: 'scatter', mode: 'lines+markers',
+                    line: { color: '#5E8C61', width: 2, shape: 'spline', dash: 'dot' },
+                    marker: { size: 4, opacity: 0.6, color: '#5E8C61', symbol: 'diamond' },
+                    hovertemplate: '<b>%{x}</b><br>%{y:.1f} Mt CO₂ (Consumption)<extra></extra>',
+                    showlegend: false
+                }
+            ], {
+                annotations: totalAnnotations,
+                margin: { t: 40, r: 16, b: 48, l: 56 },
+                xaxis: { ...PB.xaxis, title: '' },
+                yaxis: { ...PB.yaxis, title: 'Mt CO₂', range: [100, allMax] }
+            });
 
             /* ── PER CAPITA CHART ── */
             const pcMainTrace = {
@@ -2725,6 +2609,8 @@
             const compCountries = countries.filter(c => c.co2_per_capita != null && !(c.code in { Africa: true, 'Middle East': true }));
             compCountries.sort((a, b) => b.co2_per_capita - a.co2_per_capita);
 
+            const worldAvg = d.world_avg_per_capita || 4.71;
+
             plotInto('comparisonChart', [{
                 x: compCountries.map(c => c.name),
                 y: compCountries.map(c => c.co2_per_capita),
@@ -2736,13 +2622,13 @@
                 bargap: 0.35,
                 yaxis: { ...PB.yaxis, title: 't CO₂ / person' },
                 shapes: [{
-                    type: 'line', y0: 4.71, y1: 4.71, x0: 0, x1: 1,
+                    type: 'line', y0: worldAvg, y1: worldAvg, x0: 0, x1: 1,
                     xref: 'paper', yref: 'y',
                     line: { color: 'gray', width: 1.5, dash: 'dash' }
                 }],
                 annotations: [{
-                    x: 1, y: 4.85, xref: 'paper', yref: 'y',
-                    text: 'World avg: 4.71t', showarrow: false,
+                    x: 1, y: worldAvg + 0.14, xref: 'paper', yref: 'y',
+                    text: `World avg: ${worldAvg}t`, showarrow: false,
                     font: { size: 10, color: '#666', style: 'italic' },
                     xanchor: 'right', yanchor: 'bottom'
                 }]
@@ -2856,12 +2742,6 @@
                 showChartError('intensityChart', 'Carbon intensity unavailable');
             }
 
-            // Staggered resize events bracket the 450ms card reveal CSS transition.
-            // One of them is guaranteed to fire after the animation settles,
-            // regardless of how long the API response took.
-            [50, 300, 650].forEach(ms =>
-                setTimeout(() => window.dispatchEvent(new Event('resize')), ms)
-            );
 
         } catch (e) {
             console.error('Comparison chart error:', e);
@@ -3101,12 +2981,10 @@
                     }], document.getElementById('sourcesChart').layout);
                 }
 
-                // Guard: only draw the year marker line if the Sources Over Time chart
-                // is fully initialised with a valid layout. Without this check, Plotly.relayout
-                // fires on a partially-rendered chart during play animation, creating a ghost
-                // red line that floats without axes.
+                // Only draw the year marker line if the Sources Over Time chart
+                // has been fully created by Plotly (has .js-plotly-plot child).
                 const timeChartEl = document.getElementById('sourcesTimeChart');
-                if (timeChartEl && timeChartEl._fullLayout && timeChartEl.querySelector('.xy')) {
+                if (timeChartEl && timeChartEl.querySelector('.js-plotly-plot')) {
                     Plotly.relayout(timeChartEl, {
                         shapes: [{
                             type: 'line', x0: year, x1: year, y0: 0, y1: 1,
@@ -3207,37 +3085,14 @@
         }
     });
 
-    function initCharts() {
+    async function initCharts() {
         renderTierCells();
         initComparisonYearDropdown();
         loadCountrySummary();
-        setTimeout(loadEmissionsCharts, 100);
-        // Comparison charts are lazy-loaded when the section enters the viewport.
-        // Eager pre-loading caused bars to render while cards are still off-screen
-        // (opacity:0, transform active), which corrupts Plotly's internal clipPath.
-        initLazyComparisonCharts();
-        setTimeout(loadSourcesChart, 300);
-        setTimeout(setupChartReset, 500);
-    }
-
-    function initLazyComparisonCharts() {
-        const section = document.getElementById('comparison');
-        if (!section) { setTimeout(() => loadComparisonCharts(currentTier), 200); return; }
-
-        let loaded = false;
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting && !loaded) {
-                    loaded = true;
-                    observer.disconnect();
-                    // Wait 60ms for the card's CSS reveal animation to start (revealObserver
-                    // adds .visible on the same scroll event), then let Plotly render into
-                    // the container with its correct expanded dimensions.
-                    setTimeout(() => loadComparisonCharts(currentTier), 60);
-                }
-            });
-        }, { threshold: 0.05 });
-        observer.observe(section);
+        await loadEmissionsCharts();
+        await loadComparisonCharts(currentTier);
+        await loadSourcesChart();
+        setupChartReset();
     }
 
     function initComparisonYearDropdown() {

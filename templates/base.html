@@ -566,6 +566,7 @@
             background: #fff;
             border-radius: 12px;
             padding: 0.75rem;
+            min-height: 280px;
         }
 
         /* ── SCROLL REVEAL ── */
@@ -959,8 +960,13 @@
             if (entry.isIntersecting) {
                 entry.target.classList.add('visible');
                 revealObserver.unobserve(entry.target);
-                // Plotly hotfix: after the 450ms scroll animation finishes, trigger a resize to prevent 0-pixel bar height bugs
-                setTimeout(() => window.dispatchEvent(new Event('resize')), 500);
+                // After the 450ms CSS reveal animation, resize only Plotly charts
+                // inside THIS card — not all charts on the page.
+                setTimeout(() => {
+                    entry.target.querySelectorAll('.js-plotly-plot').forEach(plot => {
+                        if (typeof Plotly !== 'undefined') Plotly.Plots.resize(plot.closest('.chart-container') || plot);
+                    });
+                }, 500);
             }
         });
     }, { threshold: 0.08 });
